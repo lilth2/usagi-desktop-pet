@@ -1,0 +1,26 @@
+# PyInstaller
+dist/
+build/
+*.spec
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+
+# IDE
+.vscode/
+.idea/
+
+# Claude local settings
+.claude/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Output
+*.exe
+
+# Test artifacts
+assets/usagi_test.png
