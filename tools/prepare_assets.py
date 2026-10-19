@@ -10,12 +10,12 @@ OUT = ROOT / 'assets/chiikawa/processed'
 DOC = ROOT / 'docs/chiikawa'
 NOTES = {
  '1': '白底；卧姿看手机，完整枕被和手机；清晰；用户确认深夜版。',
- '2': '粉色办公室场景；下半身被桌面遮挡；不补画，不用作透明桌宠。',
+ '2': '粉色办公室场景；下半身被桌面遮挡；完整场景小卡片，不补画。',
  '3': '白底三角色；只裁取中间完整吉伊卡哇；清晰，适合普通版。',
- '4': '蓝黄办公室背景；电脑遮挡身体，左边道具被原图裁切；仅保留参考。',
+ '4': '蓝黄办公室背景；电脑遮挡身体；完整场景小卡片，不再额外裁切。',
  '5': '白底；完整侧卧睡姿与枕头；清晰，午睡和夜间共用。',
- '6': '粉白装饰背景；完整跳跃姿势但装饰较多；没有连续帧，仅保留参考。',
- '7': '低分辨率三人夜景；用户确认深夜版，只提取中间吉伊卡哇背影；放大清晰度受限。',
+ '6': '粉白装饰背景；跳跃姿势；完整场景小卡片，没有生成连续帧。',
+ '7': '三人夜景；按用户要求保留整张画面，深夜版，不裁切。',
 }
 
 
@@ -62,35 +62,36 @@ def main():
         records[name]={'source':file,'crop':crop,'head_width_source':head_width,
                        'scale':factor,'canvas':[320,320],'baseline':280,
                        'bbox':list(canvas.getbbox()), 'file':f'{name}.png'}
-    scene=Image.open(SRC/'7.png').convert('RGBA')
-    mask=Image.new('L',scene.size)
-    points=[(181,131),(180,127),(181,121),(184,117),(189,116),(194,118),(198,123),(207,121),(218,120),(232,122),(233,118),(238,116),(243,117),(248,121),(250,126),(249,132),(256,138),(262,146),(266,155),(268,163),(267,175),(262,185),(256,192),(260,200),(263,208),(262,218),(257,225),(247,228),(232,228),(219,229),(207,226),(200,228),(190,224),(180,223),(173,219),(171,212),(170,205),(172,196),(174,192),(166,183),(163,174),(162,165),(163,154),(167,143),(174,135)]
-    ImageDraw.Draw(mask).polygon(points,fill=255)
-    mask=mask.filter(ImageFilter.GaussianBlur(0.45))
-    scene.putalpha(mask); scene=scene.crop(mask.getbbox())
-    scale=180/110
-    scene=scene.resize((round(scene.width*scale),round(scene.height*scale)),Image.Resampling.LANCZOS)
-    canvas=Image.new('RGBA',(320,320));canvas.alpha_composite(scene,((320-scene.width)//2,280-scene.height))
-    canvas.save(OUT/'late_scene.png')
-    records['late_scene']={'source':'7.png','head_width_source':110,'scale':scale,'canvas':[320,320],'baseline':280,'bbox':list(canvas.getbbox()),'file':'late_scene.png','notes':'低分辨率原图；手工轮廓遮罩，不补画。'}
+    # Scene photographs stay whole: fit without cropping or distortion.
+    for name, file in [('office','2.png'),('desktop','4.png'),('happy','6.png'),('late_scene','7.png')]:
+        scene=Image.open(SRC/file).convert('RGBA')
+        source_size=scene.size
+        scene.thumbnail((280,240),Image.Resampling.LANCZOS)
+        canvas=Image.new('RGBA',(320,320))
+        canvas.alpha_composite(scene,((320-scene.width)//2,280-scene.height))
+        canvas.save(OUT/(name+'.png'))
+        records[name]={'source':file,'source_size':list(source_size),'canvas':[320,320],
+                       'baseline':280,'bbox':list(canvas.getbbox()),'file':name+'.png',
+                       'notes':'完整场景等比缩放，不裁切、不抠图、不补画。'}
     Image.open(OUT/'normal.png').save(OUT/'icon.ico',sizes=[(16,16),(32,32),(48,48),(128,128),(256,256)])
     (DOC/'asset-inventory.json').write_text(json.dumps({'originals':inventory,'processed':records},ensure_ascii=False,indent=2),encoding='utf-8')
     font_path='C:/Windows/Fonts/msyh.ttc'
     font=ImageFont.truetype(font_path,16)
-    sheet=Image.new('RGB',(1120,520),'#fff9f6'); d=ImageDraw.Draw(sheet)
+    sheet=Image.new('RGB',(1120,1040),'#fff9f6'); d=ImageDraw.Draw(sheet)
     for index,name in enumerate(records):
-        x=index*280
-        d.text((x+16,10),name,fill='#644d51',font=font)
+        x=(index%4)*280
+        y=(index//4)*520
+        d.text((x+16,y+10),name,fill='#644d51',font=font)
         im=Image.open(OUT/f'{name}.png')
-        for yy in range(50,330,10):
+        for yy in range(y+50,y+330,10):
             for xx in range(x,x+280,10):
-                d.rectangle((xx,yy,xx+9,yy+9),fill=('#f1e8e8' if ((xx-x)//10+yy//10)%2 else '#ffffff'))
+                d.rectangle((xx,yy,xx+9,yy+9),fill=('#f1e8e8' if ((xx-x)//10+(yy-y)//10)%2 else '#ffffff'))
         preview=im.resize((280,280),Image.Resampling.LANCZOS)
-        sheet.paste(preview,(x,50),preview)
-        d.line((x,295,x+279,295),fill='#dba5b5')
+        sheet.paste(preview,(x,y+50),preview)
+        d.line((x,y+295,x+279,y+295),fill='#dba5b5')
         actual=im.resize((110,110),Image.Resampling.LANCZOS)
-        sheet.paste(actual,(x+85,365),actual)
-        d.text((x+40,485),'下方为桌面实际尺寸',fill='#644d51',font=font)
+        sheet.paste(actual,(x+85,y+365),actual)
+        d.text((x+40,y+485),'下方为桌面实际尺寸',fill='#644d51',font=font)
     sheet.save(DOC/'asset-preview.png')
 
 if __name__=='__main__': main()

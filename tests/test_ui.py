@@ -43,7 +43,7 @@ class DesktopTests(unittest.TestCase):
             copyfile(ASSETS/'normal.png',Path(t)/'normal.png')
             with patch('desktop_pet.ASSETS',Path(t)):
                 self.pet._load_pixmap()
-            self.assertEqual(len(self.pet._asset_warnings),3)
+            self.assertEqual(len(self.pet._asset_warnings),6)
             self.assertFalse(self.pet._pixmaps['sleep'].isNull())
 
     def test_long_bounded_walk_reverses(self):
@@ -58,7 +58,7 @@ class DesktopTests(unittest.TestCase):
         self.current=datetime(2026,10,19,18,0);self.pet._refresh_schedule()
         self.pet._care_bubble.hide()
         seen=set()
-        for _ in range(3):
+        for _ in range(6):
             QTest.mouseDClick(self.pet,Qt.LeftButton,pos=QPoint(60,60))
             QTest.mouseRelease(self.pet,Qt.LeftButton,pos=QPoint(60,60))
             seen.add(self.pet._sprite_kind(False))
@@ -66,12 +66,24 @@ class DesktopTests(unittest.TestCase):
             chosen=self.pet._manual_sprite
             self.pet._refresh_schedule()
             self.assertEqual(self.pet._manual_sprite,chosen)
-        self.assertEqual(seen,{'normal','late','late_scene'})
+        self.assertEqual(seen,{'normal','office','desktop','happy','late','late_scene'})
         self.current=datetime(2026,10,19,23,0);self.pet._refresh_schedule()
         self.assertIsNone(self.pet._manual_sprite)
         self.pet._care_bubble.hide()
         QTest.mouseDClick(self.pet,Qt.LeftButton,pos=QPoint(60,60))
         self.assertIsNone(self.pet._manual_sprite)
+
+    def test_daytime_double_click_uses_all_day_art_with_care(self):
+        self.pet._messages.clear()
+        self.pet._care_bubble.hide()
+        seen=set()
+        for _ in range(4):
+            QTest.mouseDClick(self.pet,Qt.LeftButton,pos=QPoint(60,60))
+            seen.add(self.pet._sprite_kind())
+            self.assertTrue(self.pet._care_bubble.isVisible())
+            self.assertIn(self.pet._care_bubble.text(),__import__('care').CARE_MESSAGES)
+            self.pet._care_bubble.hide()
+        self.assertEqual(seen,{'normal','office','desktop','happy'})
 
     def test_drag_updates_anchor_and_grab_scale(self):
         p=self.pet;initial=p.pos();local=QPoint(60,60);global_pos=p.mapToGlobal(local)
@@ -83,6 +95,24 @@ class DesktopTests(unittest.TestCase):
         QTest.mouseRelease(p,Qt.LeftButton,pos=local)
         self.assertNotEqual(initial,p.pos());self.assertEqual(p._anchor_x,p.x())
         self.assertEqual(p._state,PetState.IDLE)
+
+    def test_seventh_image_preserves_entire_landscape(self):
+        image=self.pet._pixmaps['late_scene'].toImage()
+        opaque=[]
+        for y in range(image.height()):
+            for x in range(image.width()):
+                if image.pixelColor(x,y).alpha():opaque.append((x,y))
+        width=max(x for x,y in opaque)-min(x for x,y in opaque)+1
+        height=max(y for x,y in opaque)-min(y for x,y in opaque)+1
+        self.assertEqual((width,height),(280,187))
+
+    def test_switch_care_never_replaces_important_reminder(self):
+        self.pet._queue_message('重要提醒：任务A在18:00完成。')
+        for _ in range(4):QTest.mouseDClick(self.pet,Qt.LeftButton,pos=QPoint(60,60))
+        self.assertEqual(self.pet._care_bubble.text(),'重要提醒：任务A在18:00完成。')
+        self.assertEqual(len(self.pet._messages),1)
+        self.pet._care_bubble.hide();self.pet._drain_messages()
+        self.assertIn(self.pet._care_bubble.text(),__import__('care').CARE_MESSAGES)
 
     def test_sleep_stops_walk_but_delivers_original_reminder(self):
         self.current=datetime(2026,10,19,23,0);self.pet._refresh_schedule()

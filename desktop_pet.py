@@ -207,8 +207,15 @@ class DesktopPetWindow(QMainWindow):
             self._fade_started = time.monotonic()
             self._last_pixmap = pixmap
 
-    def _queue_message(self, text):
-        self._messages.append(text)
+    def _queue_message(self, text, change_pose=True):
+        if not change_pose:
+            # Rapid picture changes keep the latest care line, while original
+            # important reminders stay queued and are never overwritten.
+            self._messages = deque((message, pose) for message, pose in self._messages if pose)
+            if self._care_bubble.isVisible() and not self._reminder_until:
+                self._care_bubble.present(text, self)
+                return
+        self._messages.append((text, change_pose))
         self._drain_messages()
 
     def _bubble_finished(self):
@@ -221,9 +228,10 @@ class DesktopPetWindow(QMainWindow):
             return
         if self._messages:
             self._enter_idle()
-            self._reminder_until = time.monotonic() + 10
+            text, change_pose = self._messages.popleft()
+            self._reminder_until = time.monotonic() + 10 if change_pose else 0
             self._update_visual_transition()
-            self._care_bubble.present(self._messages.popleft(), self)
+            self._care_bubble.present(text, self)
         elif self._greeting_pending and (self._appearance != 'sleep' or self._interacted):
             key, text = self._greeting_pending
             self._greeting_pending = None
@@ -258,7 +266,7 @@ class DesktopPetWindow(QMainWindow):
         """All states load only normalized Chiikawa art from one directory."""
         self._asset_warnings = []
         self._pixmaps = {}
-        for kind in ('normal', 'late', 'late_scene', 'sleep'):
+        for kind in ('normal', 'office', 'desktop', 'happy', 'late', 'late_scene', 'sleep'):
             path = ASSETS / (kind + '.png')
             pixmap = QPixmap(str(path))
             if pixmap.isNull():
@@ -297,15 +305,15 @@ class DesktopPetWindow(QMainWindow):
         self._dragging = False
         self._interacted = False
         self._enter_idle()
-        allowed = ('normal', 'late', 'late_scene') if self._appearance == 'late' else (self._appearance,)
+        daytime = ('normal', 'office', 'desktop', 'happy')
+        allowed = daytime + ('late', 'late_scene') if self._appearance == 'late' else ('sleep',) if self._appearance == 'sleep' else daytime
         if len(allowed) > 1:
             # Reminder pose is temporary; cycle the underlying character choice.
             current = self._sprite_kind(include_reminder=False)
             self._manual_sprite = allowed[(allowed.index(current) + 1) % len(allowed)]
             self._update_visual_transition()
             self.update()
-        else:
-            self._queue_message('这个时段目前只有一张可用图片。晚间可以双击切换深夜图片。')
+        self._queue_message(self._care_clock.next_message(), change_pose=False)
         event.accept()
 
     def _setup_window(self):

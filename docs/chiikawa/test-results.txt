@@ -12,6 +12,7 @@ test_required_boundaries (test_schedule.SchedulingTests.test_required_boundaries
 test_restart_dedup (test_schedule.SchedulingTests.test_restart_dedup) ... ok
 test_timezone_change_recomputes (test_schedule.SchedulingTests.test_timezone_change_recomputes) ... ok
 test_wake_only_current_period (test_schedule.SchedulingTests.test_wake_only_current_period) ... ok
+test_daytime_double_click_uses_all_day_art_with_care (test_ui.DesktopTests.test_daytime_double_click_uses_all_day_art_with_care) ... ok
 test_double_click_cycles_allowed_art_and_resets_at_boundary (test_ui.DesktopTests.test_double_click_cycles_allowed_art_and_resets_at_boundary) ... ok
 test_drag_updates_anchor_and_grab_scale (test_ui.DesktopTests.test_drag_updates_anchor_and_grab_scale) ... ok
 test_important_messages_queue_before_greeting (test_ui.DesktopTests.test_important_messages_queue_before_greeting) ... ok
@@ -20,11 +21,13 @@ test_menu_native_corners_and_keyboard_navigation (test_ui.DesktopTests.test_menu
 test_no_wrong_random_assets_and_resume_refresh (test_ui.DesktopTests.test_no_wrong_random_assets_and_resume_refresh) ... ok
 test_settings_long_text_resize_and_focus (test_ui.DesktopTests.test_settings_long_text_resize_and_focus) ... ok
 test_settings_save_custom_text_and_unknown_fields (test_ui.DesktopTests.test_settings_save_custom_text_and_unknown_fields) ... ok
+test_seventh_image_preserves_entire_landscape (test_ui.DesktopTests.test_seventh_image_preserves_entire_landscape) ... ok
 test_sleep_greeting_is_deferred_and_click_is_gentle (test_ui.DesktopTests.test_sleep_greeting_is_deferred_and_click_is_gentle) ... ok
 test_sleep_stops_walk_but_delivers_original_reminder (test_ui.DesktopTests.test_sleep_stops_walk_but_delivers_original_reminder) ... ok
+test_switch_care_never_replaces_important_reminder (test_ui.DesktopTests.test_switch_care_never_replaces_important_reminder) ... ok
 test_transparent_topmost_assets_and_missing_fallback (test_ui.DesktopTests.test_transparent_topmost_assets_and_missing_fallback) ... ok
 
 ----------------------------------------------------------------------
-Ran 25 tests in 1.860s
+Ran 28 tests in 1.895s
 
 OK
