@@ -1,87 +1,76 @@
-# 桌面桌宠 - 乌萨奇 (Usagi Pet)
+# 吉伊卡哇桌宠 · Chiikawa
 
-基于 PyQt5 的透明无边框桌面桌宠，角色为 Chiikawa 系列的乌萨奇。
+在现有 PyQt5 桌宠项目上换肤，保留透明置顶、拖拽、小范围散步、离线关怀、菜单开关和退出。新增本地时间问候、时间外观、持久化设置。没有网络服务、付费 API 或音频。
 
-- 🖼️ 贴图渲染（支持 PNG + GIF 动画）
-- 🫧 Idle 呼吸浮动 + Walk 随机走动摇摆
-- 🖱️ 左键拖拽 + 右键退出
-- 📦 可打包为独立 exe（无需 Python 环境）
+## 启动
 
-## 快速使用
+Windows 双击 `dist/ChiikawaPet.exe`（本地构建产物），或在已配置的本机双击 `启动吉伊卡哇.bat`。旧的 `启动乌萨奇.bat` 继续兼容，打开同一新版程序。
 
-### 直接运行
+源码运行：
 
-```bash
-pip install PyQt5
-python desktop_pet.py
+```powershell
+python -m venv .venv
+.\.venv\Scripts\python -m pip install -r requirements.txt
+.\.venv\Scripts\python desktop_pet.py
 ```
 
-### 下载打包版（免 Python）
+## 交互与设置
 
-从 [Releases](https://github.com/ruochengwu/usagi-desktop-pet/releases) 下载 `UsagiPet.exe`，双击运行。
+- 左键拖动：抓起时等比缩小，松手恢复；最后放下的位置成为散步中心。
+- 散步：左右各 30 像素内折返，每次 8–14 秒，间隔 15–30 秒。
+- 关怀：Windows 读取距离最后一次键鼠输入的时间，持续使用约 30 分钟提醒一次；空闲 5 分钟或休眠长间隔重置。只读空闲时间，不读键鼠内容，不保存使用记录。
+- 右键菜单：关怀开关、一句暖心话、散步开关、陪伴与时间设置、退出。
+- 设置页：陪伴、外观时间、时间问候。可编辑时间段、默认问候、多条文案以及深夜素材选择。
+- 睡眠外观暂停散步/闲置摇摆，提醒计时照常；点击可收到轻柔反馈，时间状态不会被永久改变。
 
-## 贴图文件
+## 默认时间表
 
-| 文件 | 用途 | 必需 |
-|------|------|------|
-| `usagi_idle.png` | Idle 站立 | ✅ |
-| `usagi_walk1.gif` | Walk 行走动画 | 可选 |
-| `usagi_walk2.png` | Walk 备用帧 | 可选 |
-| `usagi_grabbed.gif` | 抓起表情 | 可选 |
+采用电脑当前本地时间，包含开始、不包含结束。
 
-替换为自己的贴图即可更换角色。
+| 问候 | 时间 |
+|---|---|
+| 早上好 | 06:00–11:00 |
+| 中午好 | 11:00–14:00 |
+| 下午好 | 14:00–18:00 |
+| 晚上好 | 18:00–次日06:00 |
 
-## 交互
+| 外观 | 时间 / 素材 |
+|---|---|
+| 午睡 | 12:30–14:00，5.png |
+| 夜间睡眠 | 23:00–次日06:00，5.png |
+| 晚间清醒 | 18:00–23:00，1.png / 7.png（用户确认，按日期轮换，可固定） |
+| 普通 | 其余时间，3.png 中间的吉伊卡哇 |
 
-| 操作 | 效果 |
-|------|------|
-| 左键拖拽 | 抓起宠物，缩小至 70%，跟随鼠标 |
-| 右键点击 | 弹出菜单 → 退出程序 |
-| 什么都不做 | Idle 浮动呼吸 + Walk 随机走动 |
+问候与外观独立配置。睡眠 > 深夜 > 普通；深夜素材不会在白天随机出现。每个本地日期、每个稳定时段 ID 最多自动问候一次，记录写入配置。睡眠问候延后至互动或睡醒，错过的时段不补发。关怀和问候用单一气泡排队。
 
-## 自行打包
+## 素材与数据
 
-```bash
-pip install pyinstaller
-pyinstaller --onefile --windowed --name "UsagiPet" ^
-    --add-data "usagi_idle.png;." ^
-    --add-data "usagi_walk1.gif;." ^
-    --add-data "usagi_walk2.png;." ^
-    --add-data "usagi_grabbed.gif;." ^
-    desktop_pet.py
+- 原始照片不覆盖，副本在 `assets/chiikawa/originals/`（本机保留、不上传）；处理图在 `assets/chiikawa/processed/`。
+- 统一 320×320 透明画布，脚底/接触面 y=280，按头部实际宽度统一比例；等比缩放，不生成缺失肢体或连续帧。
+- 缺少走路/抓起连续帧，使用现有吉伊卡哇配合平移、轻摆及等比缩小。7.png 分辨率较低且脚部被草地遮挡，保留原画遮挡，不补画。
+- 配置：`%APPDATA%\UsagiPet\settings.json`。内部目录保留稳定名称；保存前备份 `.json.bak`，原子写入。未知字段、自定义问候和记录保留，损坏文件不覆盖。
+- 旧代码/素材本机备份在 `backups/`，运行与打包均不读取旧角色资源。
+- 完整交付说明见 [验收报告](docs/chiikawa/验收报告.md)；素材和原生界面截图见 [本地预览页](docs/chiikawa/index.html)。
+
+## 开发、测试与构建
+
+```powershell
+.\.venv\Scripts\python -m pip install -r requirements-dev.txt
+.\.venv\Scripts\python tools/prepare_assets.py
+.\.venv\Scripts\python -m unittest discover -s tests -v
+.\.venv\Scripts\python tools/capture_ui.py
+.\build.ps1
 ```
 
-## 配置
+PyInstaller 沿用原有单文件、无控制台模式，将处理图和图标一起打包，产物 `dist/ChiikawaPet.exe`。原始图与备份不打包。
 
-编辑 `desktop_pet.py` 顶部常量区可调整：
+仅源码开发环境支持时间预览（不修改电脑系统时间，不写入问候去重记录）：
 
-| 常量 | 说明 | 默认值 |
-|------|------|--------|
-| `TEXTURE_DISPLAY_W/H` | 贴图显示尺寸 | 90px（贴图）/ 120px（窗口） |
-| `WINDOW_WIDTH/HEIGHT` | 窗口大小 | 90px（贴图）/ 120px（窗口） |
-| `FRAME_INTERVAL` | 动画帧间隔 | 40ms (25FPS) |
-| `WALK_INTERVAL_MIN/MAX` | 行走触发间隔 | 15-30s |
-| `WALK_SPEED_MIN/MAX` | 行走速度 | 1 px/帧 |
+```powershell
+$env:CHIIKAWA_DEV='1'
+.\.venv\Scripts\python desktop_pet.py --preview-time 2026-10-19T23:00
+```
 
+也可通过开发环境设置页的「开发预览」调整时间。打包版忽略开发预览开关。测试覆盖时间边界、去重、原有提醒、数据保留及 Qt 原生交互；硬件休眠和多显示器限制见验收报告。
 
-## 轻量陪伴版
-
-本项目基于 [ruochengwu/usagi-desktop-pet](https://github.com/ruochengwu/usagi-desktop-pet) 修改。
-
-- 保留自动关怀、拖拽和小范围散步，已移除聊天功能。
-- 右键打开乌萨奇风格菜单：角色头像、奶油黄背景、圆角、暖色悬停和圆形开关。
-- 菜单中可以开关自动关怀、预览暖心话、开关散步及退出；打开菜单时暂停散步。
-
-安装：`python -m pip install -r requirements.txt`，启动：`python desktop_pet.py`。
-Windows 已配置本地虚拟环境时，可双击「启动乌萨奇.bat」。其他电脑请先运行 `python -m venv .venv`，再运行 `.venv\Scripts\python -m pip install -r requirements.txt`。
-
-
-## 自动关怀与轻量走动
-
-- 角色贴图从 200px 缩至 90px；每 15–30 秒走动一次，每次 8–14 秒，到左右边界自动折返。
-- 始终限制在启动位置或最后拖放位置左右各 30px 内，避免连续走动漂移到屏幕中央。
-- Windows 下读取系统「距离最后一次键鼠输入的时间」，每 10 秒检查一次。持续使用约 30 分钟弹出关怀气泡，10 秒后消失，不抢输入焦点。
-- 连续 5 分钟无键鼠输入视为休息并重置计时；休眠或恢复造成的长采样间隔也重置。观看视频等没有键鼠操作的场景可能被视为空闲。
-- 不读取输入内容，不判断真实情绪，不联网，不存储使用记录。非 Windows 平台不启用使用时长提醒。
-- 10 句预设关怀包含休息、喝水、肩颈放松、安慰、鼓励和陪伴，每轮随机且不重复。
-- 右键菜单可以关闭自动关怀、关闭走动，或点「送你一句暖心话 ♡」立即预览。开关仅对本次运行生效。
+基于 [ruochengwu/usagi-desktop-pet](https://github.com/ruochengwu/usagi-desktop-pet) 修改；用户 GitHub 仓库地址与历史记录继续保留。

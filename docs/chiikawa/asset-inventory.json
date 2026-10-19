@@ -1,0 +1,163 @@
+{
+  "originals": [
+    {
+      "file": "1.png",
+      "size": [
+        843,
+        841
+      ],
+      "mode": "RGBA",
+      "sha256": "3ecc7f0fb2f0582bb62766e4075a9cfe1571eb65805520fada6514f727c4f63f",
+      "notes": "白底；卧姿看手机，完整枕被和手机；清晰；用户确认深夜版。"
+    },
+    {
+      "file": "2.png",
+      "size": [
+        841,
+        843
+      ],
+      "mode": "RGBA",
+      "sha256": "b3c05f2a81e4063e034799f1e07c8ec6aef13c6c3770a030334ac4277f493ae4",
+      "notes": "粉色办公室场景；下半身被桌面遮挡；不补画，不用作透明桌宠。"
+    },
+    {
+      "file": "3.png",
+      "size": [
+        869,
+        665
+      ],
+      "mode": "RGBA",
+      "sha256": "fe2c8d1fe0cad3386f2e5f785ea0b3476831349445b583247c9983b1d8c66fe9",
+      "notes": "白底三角色；只裁取中间完整吉伊卡哇；清晰，适合普通版。"
+    },
+    {
+      "file": "4.png",
+      "size": [
+        873,
+        837
+      ],
+      "mode": "RGBA",
+      "sha256": "42a452e5812b0b31d93fd7bfcb5cbdd65a8ee4825868f813d993095b79b67a06",
+      "notes": "蓝黄办公室背景；电脑遮挡身体，左边道具被原图裁切；仅保留参考。"
+    },
+    {
+      "file": "5.png",
+      "size": [
+        878,
+        617
+      ],
+      "mode": "RGBA",
+      "sha256": "d7934e1d48367dbce189f22aaba2f6d018e378d16a7ef48166549891fc7fb4b7",
+      "notes": "白底；完整侧卧睡姿与枕头；清晰，午睡和夜间共用。"
+    },
+    {
+      "file": "6.png",
+      "size": [
+        843,
+        771
+      ],
+      "mode": "RGBA",
+      "sha256": "18edab5c098fe72c0ef7648ef8834fe0bc55a248338a73f60f8408685a8c3a5c",
+      "notes": "粉白装饰背景；完整跳跃姿势但装饰较多；没有连续帧，仅保留参考。"
+    },
+    {
+      "file": "7.png",
+      "size": [
+        471,
+        314
+      ],
+      "mode": "RGBA",
+      "sha256": "a779196b34b7c65df975f2b65b65f593f6e27e121d1b56e2751dd68b0dca8ed9",
+      "notes": "低分辨率三人夜景；用户确认深夜版，只提取中间吉伊卡哇背影；放大清晰度受限。"
+    }
+  ],
+  "processed": {
+    "normal": {
+      "source": "3.png",
+      "crop": [
+        310,
+        245,
+        563,
+        535
+      ],
+      "head_width_source": 230,
+      "scale": 0.782608695652174,
+      "canvas": [
+        320,
+        320
+      ],
+      "baseline": 280,
+      "bbox": [
+        66,
+        77,
+        253,
+        280
+      ],
+      "file": "normal.png"
+    },
+    "late": {
+      "source": "1.png",
+      "crop": [
+        145,
+        225,
+        740,
+        655
+      ],
+      "head_width_source": 375,
+      "scale": 0.48,
+      "canvas": [
+        320,
+        320
+      ],
+      "baseline": 280,
+      "bbox": [
+        26,
+        90,
+        293,
+        280
+      ],
+      "file": "late.png"
+    },
+    "sleep": {
+      "source": "5.png",
+      "crop": [
+        165,
+        165,
+        715,
+        545
+      ],
+      "head_width_source": 380,
+      "scale": 0.47368421052631576,
+      "canvas": [
+        320,
+        320
+      ],
+      "baseline": 280,
+      "bbox": [
+        39,
+        130,
+        281,
+        280
+      ],
+      "file": "sleep.png"
+    },
+    "late_scene": {
+      "source": "7.png",
+      "head_width_source": 110,
+      "scale": 1.6363636363636365,
+      "canvas": [
+        320,
+        320
+      ],
+      "baseline": 280,
+      "bbox": [
+        69,
+        90,
+        251,
+        280
+      ],
+      "file": "late_scene.png",
+      "notes": "低分辨率原图；手工轮廓遮罩，不补画。"
+    }
+  }
+}

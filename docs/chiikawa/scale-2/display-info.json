@@ -1,0 +1,15 @@
+{
+  "requested_scale": "2",
+  "device_pixel_ratio": 2.0,
+  "logical_pet": [
+    120,
+    120
+  ],
+  "screens": [
+    {
+      "name": "\\\\.\\DISPLAY2",
+      "width": 960,
+      "height": 540
+    }
+  ]
+}

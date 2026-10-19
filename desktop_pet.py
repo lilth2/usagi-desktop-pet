@@ -1,57 +1,38 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""
-桌面桌宠 - 乌萨奇 (Usagi)
-使用 PyQt5 + QPixmap/QMovie 贴图渲染的透明无边框桌面宠物应用
-
-运行方式:
-    pip install PyQt5
-    python desktop_pet.py
-
-图片文件（放到同目录下）:
-    usagi_idle.png     — Idle 状态（必需）
-    usagi_walk1.gif    — Walk 动画（可选，无则用 idle）
-    usagi_walk2.png    — Walk 帧2（可选）
-    usagi_grabbed.gif  — 抓起状态（可选，无则缩放 idle）
-
-打包方式:
-    pip install pyinstaller
-    pyinstaller --onefile --windowed --add-data "usagi_idle.png;." ... desktop_pet.py
-"""
+"""吉伊卡哇桌宠：保留本地关怀和限定散步，支持本地时间问候与外观。"""
 
 import sys
 import math
 import random
 import os
+import time
+import logging
+from collections import deque
 from enum import Enum
 from care import CareClock, CareBubble, idle_seconds
 from pet_menu import PetMenu
+from theme import NAME, resource, ASSETS
+from schedule import SettingsStore, Schedule
 
 from PyQt5.QtWidgets import QApplication, QMainWindow, QAction
 from PyQt5.QtCore import Qt, QTimer, QPoint
-from PyQt5.QtGui import QPainter, QColor, QPixmap, QMovie
+from PyQt5.QtGui import QPainter, QColor, QPixmap, QIcon
 
 # ============================================================================
 # 常量配置
 # ============================================================================
 
-# 贴图文件路径（支持 PyInstaller 打包后的临时目录）
-if getattr(sys, 'frozen', False):
-    _BASE = sys._MEIPASS           # PyInstaller --onefile 解压临时目录
-else:
-    _BASE = os.path.dirname(os.path.abspath(__file__))
-PIXMAP_IDLE = os.path.join(_BASE, "usagi_idle.png")
-PIXMAP_WALK_GIF = os.path.join(_BASE, "usagi_walk1.gif")
-PIXMAP_WALK2 = os.path.join(_BASE, "usagi_walk2.png")
-PIXMAP_GRABBED_GIF = os.path.join(_BASE, "usagi_grabbed.gif")
+# All resource paths are centralized in theme.py. The source folder and
+# internal UsagiPet settings identity remain stable for launcher compatibility.
 
 # 窗口尺寸
 WINDOW_WIDTH = 120
 WINDOW_HEIGHT = 120
 
 # 贴图显示目标尺寸（无论原始图片多大，渲染时缩放到此范围）
-TEXTURE_DISPLAY_W = 90
-TEXTURE_DISPLAY_H = 90
+TEXTURE_DISPLAY_W = 110
+TEXTURE_DISPLAY_H = 110
 
 # 动画帧间隔 (ms)，约 25 FPS
 FRAME_INTERVAL = 40
@@ -141,96 +122,165 @@ class AnimationData:
 class DesktopPetWindow(QMainWindow):
     """透明无边框桌宠窗口，负责贴图加载、状态机、事件处理和渲染"""
 
-    def __init__(self):
+    def __init__(self, store=None):
         super().__init__()
+        self._store = store or SettingsStore()
+        self._dev = not getattr(sys, 'frozen', False) and os.environ.get('CHIIKAWA_DEV') == '1'
+        self._schedule = Schedule(self._store)
+        if self._dev and '--preview-time' in sys.argv:
+            from datetime import datetime
+            self._schedule.preview = datetime.fromisoformat(sys.argv[sys.argv.index('--preview-time')+1])
+        self._appearance = self._schedule.appearance()
+        self._messages = deque()
+        self._greeting_pending = None
+        self._interacted = False
+        self._settings_dialog = None
+        self._fade_started = 0
+        self._fade_from = None
+        self._reminder_until = 0
         self._menu_open = False
         self._load_pixmap()
+        self._last_pixmap = self._current_pixmap()
         self._setup_window()
         self._setup_state()
         self._setup_timer()
         self._anchor_x = self.x()
-        self._walking_enabled = True
-        self._care_enabled = True
+        self._walking_enabled = self._store.data['walking_enabled']
+        self._care_enabled = self._store.data['care_enabled']
         self._care_clock = CareClock()
         self._care_bubble = CareBubble(self)
+        self._care_bubble.dismissed.connect(self._bubble_finished)
         self._care_timer = QTimer(self)
         self._care_timer.timeout.connect(self._check_care)
         self._care_timer.start(10000)
+        self.setWindowTitle(NAME + ' · 桌宠')
+        self.setWindowIcon(QIcon(str(resource('normal'))))
+        self._schedule_timer = QTimer(self)
+        self._schedule_timer.timeout.connect(self._refresh_schedule)
+        self._schedule_timer.start(1000)
+        QTimer.singleShot(600, self._refresh_schedule)
+        if self._dev and '--show-settings' in sys.argv:
+            QTimer.singleShot(700, self._show_settings)
+        if self._store.warning:
+            QTimer.singleShot(800, lambda: self._queue_message(self._store.warning))
+        if self._asset_warnings:
+            QTimer.singleShot(1000, lambda: self._queue_message('；'.join(self._asset_warnings)))
+
+    def _apply_settings(self):
+        self._walking_enabled = self._store.data['walking_enabled']
+        if self._care_enabled != self._store.data['care_enabled']:
+            self._care_clock = CareClock()
+        self._care_enabled = self._store.data['care_enabled']
+        self._enter_idle()
+        self._refresh_schedule()
+
+    def _persist_toggle(self, key, enabled):
+        self._store.data[key] = enabled
+        try: self._store.save()
+        except OSError as e: self._queue_message('设置保存失败：' + str(e))
+
+    def _show_settings(self):
+        from settings_ui import SettingsDialog
+        if self._settings_dialog is not None and self._settings_dialog.isVisible():
+            self._settings_dialog.raise_(); return
+        self._enter_idle()
+        self._settings_dialog = SettingsDialog(self)
+        self._settings_dialog.show()
+
+    def _refresh_schedule(self):
+        current = self._schedule.appearance()
+        if current != self._appearance:
+            self._appearance = current
+            self._enter_idle()
+        self._update_visual_transition()
+        # Replace deferred greeting with only the CURRENT period, never backlog.
+        self._greeting_pending = self._schedule.greeting()
+        self._drain_messages()
+
+    def _update_visual_transition(self):
+        pixmap = self._current_pixmap()
+        if pixmap.cacheKey() != self._last_pixmap.cacheKey():
+            self._fade_from = self._last_pixmap
+            self._fade_started = time.monotonic()
+            self._last_pixmap = pixmap
+
+    def _queue_message(self, text):
+        self._messages.append(text)
+        self._drain_messages()
+
+    def _bubble_finished(self):
+        self._reminder_until = 0
+        self._update_visual_transition()
+        QTimer.singleShot(50, self._drain_messages)
+
+    def _drain_messages(self):
+        if self._care_bubble.isVisible() or self._dragging or self._menu_open:
+            return
+        if self._messages:
+            self._enter_idle()
+            self._reminder_until = time.monotonic() + 10
+            self._update_visual_transition()
+            self._care_bubble.present(self._messages.popleft(), self)
+        elif self._greeting_pending and (self._appearance != 'sleep' or self._interacted):
+            key, text = self._greeting_pending
+            self._greeting_pending = None
+            try: self._schedule.delivered(key)
+            except OSError as e:
+                logging.warning('Greeting record not saved: %s', e)
+                return
+            self._care_bubble.present(text, self)
+        self._interacted = False
 
     def _check_care(self):
         due = self._care_clock.poll(idle_seconds())
-        if due and self._care_enabled and not self._dragging:
+        if due and self._care_enabled:
             self._show_care()
 
     def _show_care(self):
-        self._enter_idle()
-        self._care_bubble.present(self._care_clock.next_message(), self)
+        self._queue_message(self._care_clock.next_message())
 
     def _toggle_walking(self, enabled):
         self._walking_enabled = enabled
+        self._persist_toggle('walking_enabled', enabled)
         self._enter_idle()
 
     def _toggle_care(self, enabled):
         self._care_enabled = enabled
+        self._persist_toggle('care_enabled', enabled)
         self._care_clock = CareClock()
         if not enabled:
             self._care_bubble.hide()
 
     def _load_pixmap(self):
-        """加载所有贴图资源：Idle (PNG)、Walk (GIF/PNG)、Grabbed (GIF)"""
-        self._pixmap_idle = None
+        """All states load only normalized Chiikawa art from one directory."""
+        self._asset_warnings = []
+        self._pixmaps = {}
+        for kind in ('normal', 'late', 'late_scene', 'sleep'):
+            path = ASSETS / (kind + '.png')
+            pixmap = QPixmap(str(path))
+            if pixmap.isNull():
+                self._asset_warnings.append('吉伊卡哇素材缺失：' + path.name)
+                pixmap = QPixmap(str(resource('normal')))
+            if pixmap.isNull():
+                raise RuntimeError('普通吉伊卡哇素材缺失，无法启动：' + str(resource('normal')))
+            self._pixmaps[kind] = pixmap
+        self._pixmap_idle = self._pixmaps['normal']
+        # Keep state hooks compatible; no legacy GIFs are loaded.
         self._movie_walk = None
-        self._pixmap_walk2 = None
         self._movie_grabbed = None
-
-        # --- Idle 贴图（必需） ---
-        if os.path.exists(PIXMAP_IDLE):
-            self._pixmap_idle = QPixmap(PIXMAP_IDLE)
-        else:
-            self._pixmap_idle = self._create_placeholder("Idle")
-
-        # --- Walk GIF ---
-        if os.path.exists(PIXMAP_WALK_GIF):
-            self._movie_walk = QMovie(PIXMAP_WALK_GIF)
-            self._movie_walk.setCacheMode(QMovie.CacheAll)
-        elif os.path.exists(PIXMAP_WALK2):
-            self._pixmap_walk2 = QPixmap(PIXMAP_WALK2)
-
-        # --- Grabbed GIF ---
-        if os.path.exists(PIXMAP_GRABBED_GIF):
-            self._movie_grabbed = QMovie(PIXMAP_GRABBED_GIF)
-            self._movie_grabbed.setCacheMode(QMovie.CacheAll)
-
-    def _create_placeholder(self, label):
-        """创建占位贴图"""
-        pm = QPixmap(TEXTURE_DISPLAY_W, TEXTURE_DISPLAY_H)
-        pm.fill(Qt.transparent)
-        painter = QPainter(pm)
-        painter.setRenderHint(QPainter.Antialiasing)
-        painter.setPen(Qt.NoPen)
-        painter.setBrush(QColor(255, 200, 100))
-        painter.drawEllipse(5, 5, TEXTURE_DISPLAY_W - 10, TEXTURE_DISPLAY_H - 10)
-        painter.setPen(QColor(100, 50, 0))
-        font = painter.font()
-        font.setPointSize(10)
-        painter.setFont(font)
-        painter.drawText(pm.rect(), Qt.AlignCenter, f"请放置\nusagi_{label}.png")
-        painter.end()
-        print(f"警告: 未找到 {label} 贴图，使用占位图")
-        return pm
+        self._pixmap_walk2 = None
 
     def _current_pixmap(self):
-        """返回当前状态下应渲染的 QPixmap"""
-        if self._state == PetState.WALK:
-            if self._movie_walk is not None:
-                return self._movie_walk.currentPixmap()
-            if self._pixmap_walk2 is not None:
-                return self._pixmap_walk2
-        elif self._state == PetState.GRABBED:
-            if self._movie_grabbed is not None:
-                return self._movie_grabbed.currentPixmap()
-        # Idle 或 fallback
-        return self._pixmap_idle
+        if time.monotonic() < self._reminder_until:
+            return self._pixmaps['normal']
+        kind = self._appearance
+        if kind == 'late':
+            variant = self._store.data['late_variant']
+            if variant == 'rotate':
+                kind = 'late' if self._schedule.now().date().toordinal() % 2 else 'late_scene'
+            else:
+                kind = variant if variant in ('late', 'late_scene') else 'late'
+        return self._pixmaps.get(kind, self._pixmap_idle)
 
     def _setup_window(self):
         """配置透明无边框置顶窗口"""
@@ -260,7 +310,7 @@ class DesktopPetWindow(QMainWindow):
     def mousePressEvent(self, event):
         """鼠标按下：左键进入拖拽/抓起状态，右键弹出菜单"""
         if event.button() == Qt.LeftButton:
-            self._care_bubble.hide()
+            self._interacted = True
             self._press_global = event.globalPos()
             self._did_drag = False
             self._dragging = True
@@ -285,12 +335,13 @@ class DesktopPetWindow(QMainWindow):
                 return
             self._did_drag = True
             new_pos = event.globalPos() - self._drag_offset
-            geom = self._get_screen_geometry()
+            screen = QApplication.screenAt(event.globalPos())
+            geom = screen.availableGeometry() if screen else self._get_screen_geometry()
             if geom:
-                x = max(geom.left() - WINDOW_WIDTH + 30,
-                        min(new_pos.x(), geom.right() - 30))
-                y = max(geom.top() - WINDOW_HEIGHT + 30,
-                        min(new_pos.y(), geom.bottom() - 30))
+                x = max(geom.left(),
+                        min(new_pos.x(), geom.right() - WINDOW_WIDTH + 1))
+                y = max(geom.top(),
+                        min(new_pos.y(), geom.bottom() - WINDOW_HEIGHT + 1))
                 new_pos.setX(x)
                 new_pos.setY(y)
             self.move(new_pos)
@@ -302,11 +353,25 @@ class DesktopPetWindow(QMainWindow):
             self._enter_idle()
             if self._did_drag:
                 self._anchor_x = self.x()
+            else:
+                if self._appearance == 'sleep' and not self._greeting_pending:
+                    self._queue_message('轻轻碰到你啦，我在好好休息，也陪着你。')
+            self._drain_messages()
 
     def _show_context_menu(self, pos):
         """显示右键菜单"""
         self._enter_idle()
-        menu = PetMenu(self, self._pixmap_idle)
+        menu = self._build_menu()
+        self._menu_open = True
+        try:
+            menu.exec_(pos)
+        finally:
+            self._menu_open = False
+            menu.deleteLater()
+            QTimer.singleShot(0, self._drain_messages)
+
+    def _build_menu(self):
+        menu = PetMenu(self, self._current_pixmap())
         care_action = menu.addAction("关怀提醒 · 30分钟")
         care_action.setCheckable(True)
         care_action.setChecked(self._care_enabled)
@@ -317,16 +382,12 @@ class DesktopPetWindow(QMainWindow):
         walk_action.setCheckable(True)
         walk_action.setChecked(self._walking_enabled)
         walk_action.triggered.connect(self._toggle_walking)
+        menu.addAction("陪伴与时间设置…").triggered.connect(self._show_settings)
         menu.addSeparator()
         exit_action = QAction("下次见～", menu)
         exit_action.triggered.connect(QApplication.quit)
         menu.addAction(exit_action)
-        self._menu_open = True
-        try:
-            menu.exec_(pos)
-        finally:
-            self._menu_open = False
-            menu.deleteLater()
+        return menu
 
     def _get_screen_geometry(self):
         """获取当前窗口所在屏幕的可用几何区域"""
@@ -374,6 +435,11 @@ class DesktopPetWindow(QMainWindow):
         t = self._state_timer_ms
         anim = self._anim
 
+        if self._appearance == 'sleep':
+            anim.float_offset_y = 0
+            anim.breath_scale = 1
+            return
+
         # 身体浮动
         anim.float_offset_y = math.sin(t * 2 * math.pi / IDLE_FLOAT_PERIOD) * IDLE_FLOAT_AMPLITUDE
         # 呼吸缩放
@@ -392,7 +458,7 @@ class DesktopPetWindow(QMainWindow):
                 anim.blink_timer_ms = 0
 
         # Walk 触发
-        if self._walking_enabled and self._state_timer_ms >= self._next_walk_ms and not self._care_bubble.isVisible() and not self._menu_open:
+        if self._walking_enabled and self._state_timer_ms >= self._next_walk_ms and not self._care_bubble.isVisible() and not self._menu_open and not (self._settings_dialog and self._settings_dialog.isVisible()):
             self._enter_walk()
 
     def _enter_walk(self):
@@ -489,63 +555,36 @@ class DesktopPetWindow(QMainWindow):
         return self._anim.breath_scale
 
     def paintEvent(self, event):
-        """渲染入口：以贴图为中心应用缩放和位移动画"""
         painter = QPainter(self)
         painter.setRenderHint(QPainter.Antialiasing)
         painter.setRenderHint(QPainter.SmoothPixmapTransform)
-
-        scale = self._get_current_scale()
-
-        # 平移到窗口中心
-        painter.translate(BODY_CENTER_X, BODY_CENTER_Y)
-
-        # Walk 状态的额外形变
-        if self._state == PetState.WALK:
-            sx = scale * self._anim.walk_squash
-            sy = scale / self._anim.walk_squash
-            painter.translate(self._anim.walk_wobble_offset, 0)
-        else:
-            sx = scale
-            sy = scale
-
-        # Y 轴浮动偏移
-        painter.translate(0, self._anim.float_offset_y)
-
-        # --- 绘制底部投影 ---
-        self._draw_shadow(painter, sx, sy)
-
-        # --- 绘制贴图 ---
         pixmap = self._current_pixmap()
-        if pixmap is not None and not pixmap.isNull():
-            pw = pixmap.width()
-            ph = pixmap.height()
-            # 贴图原始尺寸 → 显示尺寸的缩放比
-            ds_x = TEXTURE_DISPLAY_W / pw if pw > 0 else 1.0
-            ds_y = TEXTURE_DISPLAY_H / ph if ph > 0 else 1.0
-            painter.save()
-            # 先缩放贴图到显示尺寸，再叠加动画缩放
-            painter.scale(sx * ds_x, sy * ds_y)
-            painter.drawPixmap(-pw // 2, -ph // 2, pixmap)
-            painter.restore()
-
+        # One canvas/foot baseline for all assets. Uniform transform only;
+        # original character proportions are never stretched or squashed.
+        painter.translate(WINDOW_WIDTH / 2, 5 + 280 / 320 * TEXTURE_DISPLAY_H)
+        scale = self._get_current_scale()
+        if self._state == PetState.WALK:
+            painter.rotate(math.sin(self._state_timer_ms * math.pi / 250) * 2)
+        painter.translate(0, self._anim.float_offset_y)
+        painter.scale(scale, scale)
+        from PyQt5.QtCore import QRectF
+        target = QRectF(-TEXTURE_DISPLAY_W / 2, -280 / 320 * TEXTURE_DISPLAY_H,
+                        TEXTURE_DISPLAY_W, TEXTURE_DISPLAY_H)
+        progress = min(1, max(0, (time.monotonic() - self._fade_started) / .3))
+        if self._fade_from is not None and progress < 1:
+            painter.setOpacity(1 - progress)
+            painter.drawPixmap(target, self._fade_from, QRectF(self._fade_from.rect()))
+            painter.setOpacity(progress)
+        painter.drawPixmap(target, pixmap, QRectF(pixmap.rect()))
         painter.end()
-
-    def _draw_shadow(self, painter, scale_x, scale_y):
-        """绘制底部投影 — 半透明深色椭圆（贴图底部）"""
-        shadow_w = int(TEXTURE_DISPLAY_W * scale_x * 0.7)
-        shadow_h = 10
-        # 投影在贴图底部偏下
-        shadow_y = int(TEXTURE_DISPLAY_H * scale_y * 0.38)
-        painter.save()
-        painter.setPen(Qt.NoPen)
-        painter.setBrush(QColor(0, 0, 0, 35))
-        painter.drawEllipse(-shadow_w // 2, shadow_y, shadow_w, shadow_h)
-        painter.restore()
 
 
 def main():
     """应用入口"""
+    QApplication.setAttribute(Qt.AA_EnableHighDpiScaling)
+    QApplication.setAttribute(Qt.AA_UseHighDpiPixmaps)
     app = QApplication(sys.argv)
+    app.setWindowIcon(QIcon(str(resource('normal'))))
     app.setQuitOnLastWindowClosed(True)
     pet = DesktopPetWindow()
     pet.show()

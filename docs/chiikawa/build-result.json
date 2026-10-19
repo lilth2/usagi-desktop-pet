@@ -1,0 +1,16 @@
+{
+  "artifact": "D:\\study\\product manager\\usagi-desktop-pet\\dist\\ChiikawaPet.exe",
+  "bytes": 38518776,
+  "sha256": "f030840c3c95a76fdf4453e73b8c36b2594e3229ac7500a61e2b745fbf3727fc",
+  "runtime_assets": [
+    "assets\\chiikawa\\processed\\icon.ico",
+    "assets\\chiikawa\\processed\\late.png",
+    "assets\\chiikawa\\processed\\late_scene.png",
+    "assets\\chiikawa\\processed\\normal.png",
+    "assets\\chiikawa\\processed\\sleep.png"
+  ],
+  "legacy_art_packaged": false,
+  "build": "success",
+  "startup": "running after 6-second smoke check",
+  "warning": "PyInstaller hidden import sip not found; PyQt5.sip runtime binary included"
+}

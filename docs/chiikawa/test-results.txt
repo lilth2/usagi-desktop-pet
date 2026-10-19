@@ -1,0 +1,29 @@
+test_corrupt_config_is_never_overwritten (test_schedule.SchedulingTests.test_corrupt_config_is_never_overwritten) ... ok
+test_edit_configuration_and_disable (test_schedule.SchedulingTests.test_edit_configuration_and_disable) ... ok
+test_entire_day_no_forbidden_appearance (test_schedule.SchedulingTests.test_entire_day_no_forbidden_appearance) ... ok
+test_inclusive_start_exclusive_end (test_schedule.SchedulingTests.test_inclusive_start_exclusive_end) ... ok
+test_midnight_calendar_date_and_restart (test_schedule.SchedulingTests.test_midnight_calendar_date_and_restart) ... ok
+test_night_assets_cannot_be_configured_for_day (test_schedule.SchedulingTests.test_night_assets_cannot_be_configured_for_day) ... ok
+test_no_overlapping_greeting_config (test_schedule.SchedulingTests.test_no_overlapping_greeting_config) ... ok
+test_original_care_timing_and_shuffle (test_schedule.SchedulingTests.test_original_care_timing_and_shuffle) ... ok
+test_preserve_unknown_fields_and_custom_text (test_schedule.SchedulingTests.test_preserve_unknown_fields_and_custom_text) ... ok
+test_preview_does_not_persist (test_schedule.SchedulingTests.test_preview_does_not_persist) ... ok
+test_required_boundaries (test_schedule.SchedulingTests.test_required_boundaries) ... ok
+test_restart_dedup (test_schedule.SchedulingTests.test_restart_dedup) ... ok
+test_timezone_change_recomputes (test_schedule.SchedulingTests.test_timezone_change_recomputes) ... ok
+test_wake_only_current_period (test_schedule.SchedulingTests.test_wake_only_current_period) ... ok
+test_drag_updates_anchor_and_grab_scale (test_ui.DesktopTests.test_drag_updates_anchor_and_grab_scale) ... ok
+test_important_messages_queue_before_greeting (test_ui.DesktopTests.test_important_messages_queue_before_greeting) ... ok
+test_long_bounded_walk_reverses (test_ui.DesktopTests.test_long_bounded_walk_reverses) ... ok
+test_menu_native_corners_and_keyboard_navigation (test_ui.DesktopTests.test_menu_native_corners_and_keyboard_navigation) ... ok
+test_no_wrong_random_assets_and_resume_refresh (test_ui.DesktopTests.test_no_wrong_random_assets_and_resume_refresh) ... ok
+test_settings_long_text_resize_and_focus (test_ui.DesktopTests.test_settings_long_text_resize_and_focus) ... ok
+test_settings_save_custom_text_and_unknown_fields (test_ui.DesktopTests.test_settings_save_custom_text_and_unknown_fields) ... ok
+test_sleep_greeting_is_deferred_and_click_is_gentle (test_ui.DesktopTests.test_sleep_greeting_is_deferred_and_click_is_gentle) ... ok
+test_sleep_stops_walk_but_delivers_original_reminder (test_ui.DesktopTests.test_sleep_stops_walk_but_delivers_original_reminder) ... ok
+test_transparent_topmost_assets_and_missing_fallback (test_ui.DesktopTests.test_transparent_topmost_assets_and_missing_fallback) ... ok
+
+----------------------------------------------------------------------
+Ran 24 tests in 2.094s
+
+OK
