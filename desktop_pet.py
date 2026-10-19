@@ -15,6 +15,7 @@ from pet_menu import PetMenu
 from theme import NAME, resource, ASSETS
 from schedule import SettingsStore, Schedule
 from body_animation import BodyAnimations
+from companion_config import CHARACTER_ASSETS, ImageRotation
 
 from PyQt5.QtWidgets import QApplication, QMainWindow, QAction
 from PyQt5.QtCore import Qt, QTimer, QPoint
@@ -133,7 +134,8 @@ class DesktopPetWindow(QMainWindow):
             from datetime import datetime
             self._schedule.preview = datetime.fromisoformat(sys.argv[sys.argv.index('--preview-time')+1])
         self._appearance = self._schedule.appearance()
-        self._manual_sprite = None
+        self._manual_sprite = self._schedule.initial_asset()
+        self._image_rotation = ImageRotation()
         self._body_animations = BodyAnimations()
         self._gesture_started = 0
         self._gesture_clip = 'interact'
@@ -141,10 +143,13 @@ class DesktopPetWindow(QMainWindow):
         self._messages = deque()
         self._greeting_pending = None
         self._interacted = False
+        self._greetings_suppressed = False
+        self._messages_blocked = False
+        self._suppress_double_until = 0
+        self._click_token = 0
         self._settings_dialog = None
         self._fade_started = 0
         self._fade_from = None
-        self._reminder_until = 0
         self._menu_open = False
         self._load_pixmap()
         self._last_pixmap = self._current_pixmap()
@@ -157,9 +162,7 @@ class DesktopPetWindow(QMainWindow):
         self._care_clock = CareClock()
         self._care_bubble = CareBubble(self)
         self._care_bubble.dismissed.connect(self._bubble_finished)
-        self._care_timer = QTimer(self)
-        self._care_timer.timeout.connect(self._check_care)
-        self._care_timer.start(10000)
+        self._care_bubble.user_closed.connect(self._dismiss_greeting)
         self.setWindowTitle(NAME + ' · 桌宠')
         self.setWindowIcon(QIcon(str(resource('normal'))))
         self._schedule_timer = QTimer(self)
@@ -174,8 +177,6 @@ class DesktopPetWindow(QMainWindow):
             QTimer.singleShot(1000, lambda: self._queue_message('；'.join(self._asset_warnings)))
 
     def _apply_settings(self,reset_sprite=True):
-        if reset_sprite:
-            self._manual_sprite = None
         self._walking_enabled = self._store.data['walking_enabled']
         if self._care_enabled != self._store.data['care_enabled']:
             self._care_clock = CareClock()
@@ -199,15 +200,44 @@ class DesktopPetWindow(QMainWindow):
     def _refresh_schedule(self):
         if self._closed:
             return
-        current = self._schedule.appearance()
-        if current != self._appearance:
-            self._appearance = current
-            self._manual_sprite = None
-            self._enter_idle()
-        self._update_visual_transition()
-        # Replace deferred greeting with only the CURRENT period, never backlog.
-        self._greeting_pending = self._schedule.greeting()
+        self._appearance = self._schedule.appearance()
+        corrected = self._correct_time_rules()
+        cycle = self._schedule.poll()
+        if cycle:
+            self._greetings_suppressed = False
+            self._messages_blocked = False
+            if cycle == 'periodic' and not corrected:
+                self._advance_image('periodic')
+            self._greeting_pending = self._schedule.greeting()
+        elif self._greeting_pending:
+            # Keep just the current period when a message was deferred.
+            self._greeting_pending = self._schedule.greeting()
+        self._check_care()
         self._drain_messages()
+
+    def _correct_time_rules(self):
+        allowed = self._schedule.allowed_assets()
+        if self._sprite_kind() not in allowed:
+            self._manual_sprite = self._schedule.initial_asset()
+            self._image_rotation = ImageRotation()
+            logging.info('Character change reason=time-rule-correction asset=%s time=%s',
+                         self._manual_sprite, self._schedule.now().isoformat())
+            self._update_visual_transition()
+            self.update()
+            return True
+        return False
+
+    def _advance_image(self, reason):
+        self._appearance = self._schedule.appearance()
+        allowed = self._schedule.allowed_assets()
+        if self._sprite_kind() not in allowed:
+            self._correct_time_rules()
+            return
+        self._manual_sprite = self._image_rotation.next(allowed, self._sprite_kind())
+        logging.info('Character change reason=%s asset=%s time=%s',
+                     reason, self._manual_sprite, self._schedule.now().isoformat())
+        self._update_visual_transition()
+        self.update()
 
     def _update_visual_transition(self):
         pixmap = self._current_pixmap()
@@ -217,52 +247,47 @@ class DesktopPetWindow(QMainWindow):
             self._last_pixmap = pixmap
 
     def _queue_message(self, text, change_pose=True):
-        if not change_pose:
-            # Rapid picture changes keep the latest care line, while original
-            # important reminders stay queued and are never overwritten.
-            self._messages = deque((message, pose) for message, pose in self._messages if pose)
-            if self._care_bubble.isVisible() and not self._reminder_until:
-                self._care_bubble.present(text, self)
-                return
+        # Compatibility argument: importance only. Messages never select art.
         self._messages.append((text, change_pose))
+        self._messages_blocked = False
         self._drain_messages()
 
     def _bubble_finished(self):
-        self._reminder_until = 0
-        self._update_visual_transition()
-        QTimer.singleShot(50, self._drain_messages)
+        # Hiding is presentation-only: no selection, animation or clock changes.
+        pass
+
+    def _dismiss_greeting(self):
+        self._greeting_pending = None
+        self._greetings_suppressed = True
+        self._messages_blocked = True
 
     def _drain_messages(self):
         if self._closed:
             return
         if not self.isVisible() or self.isMinimized() or self._care_bubble.active or self._dragging or self._menu_open:
             return
-        if self._messages:
-            self._enter_idle()
-            text, change_pose = self._messages.popleft()
-            self._reminder_until = time.monotonic() + 10 if change_pose else 0
-            self._update_visual_transition()
+        if self._messages and not self._messages_blocked:
+            text, important = self._messages.popleft()
             self._care_bubble.present(text, self)
-        elif self._greeting_pending and (self._appearance != 'sleep' or self._interacted):
-            self._greeting_pending = self._schedule.greeting()
-            if not self._greeting_pending:
-                return
-            key, text = self._greeting_pending
+        elif not self._messages and self._greeting_pending and not self._greetings_suppressed and (self._appearance != 'sleep' or self._interacted):
+            candidate = self._schedule.greeting()
             self._greeting_pending = None
-            try: self._schedule.delivered(key)
-            except OSError as e:
-                logging.warning('Greeting record not saved: %s', e)
-                return
-            self._care_bubble.present(text, self)
+            if candidate:
+                key, text = candidate
+                self._schedule.delivered(key)
+                self._care_bubble.present(text, self)
         self._interacted = False
 
     def _check_care(self):
         due = self._care_clock.poll(idle_seconds())
         if due and self._care_enabled:
-            self._show_care()
+            # This is an activity reminder, not a second random chatter pool.
+            self._queue_message('已持续使用电脑30分钟。看看远处，起来走动一下吧。')
 
     def _show_care(self):
-        self._queue_message(self._care_clock.next_message())
+        candidate = self._schedule.greeting()
+        if candidate:
+            self._queue_message(candidate[1], change_pose=False)
 
     def _toggle_walking(self, enabled):
         self._walking_enabled = enabled
@@ -280,7 +305,8 @@ class DesktopPetWindow(QMainWindow):
         """All states load only normalized Chiikawa art from one directory."""
         self._asset_warnings = []
         self._pixmaps = {}
-        for kind in ('normal', 'office', 'desktop', 'happy', 'late', 'late_scene', 'sleep'):
+        for asset in CHARACTER_ASSETS:
+            kind = asset['id']
             path = ASSETS / (kind + '.png')
             pixmap = QPixmap(str(path))
             if pixmap.isNull():
@@ -296,18 +322,7 @@ class DesktopPetWindow(QMainWindow):
         self._pixmap_walk2 = None
 
     def _sprite_kind(self, include_reminder=True):
-        if include_reminder and time.monotonic() < self._reminder_until:
-            return 'normal'
-        if self._manual_sprite is not None:
-            return self._manual_sprite
-        kind = self._appearance
-        if kind == 'late':
-            variant = self._store.data['late_variant']
-            if variant == 'rotate':
-                kind = 'late' if self._schedule.now().date().toordinal() % 2 else 'late_scene'
-            else:
-                kind = variant if variant in ('late', 'late_scene') else 'late'
-        return kind
+        return self._manual_sprite or self._schedule.allowed_assets()[0]
 
     def _current_pixmap(self):
         return self._pixmaps.get(self._sprite_kind(), self._pixmap_idle)
@@ -333,18 +348,13 @@ class DesktopPetWindow(QMainWindow):
         if event.button() != Qt.LeftButton:
             super().mouseDoubleClickEvent(event)
             return
+        if time.monotonic() < self._suppress_double_until:
+            event.accept()
+            return
         self._dragging = False
         self._interacted = False
-        self._enter_idle()
-        daytime = ('normal', 'office', 'desktop', 'happy')
-        allowed = daytime + ('late', 'late_scene') if self._appearance == 'late' else ('sleep',) if self._appearance == 'sleep' else daytime
-        if len(allowed) > 1:
-            # Reminder pose is temporary; cycle the underlying character choice.
-            current = self._sprite_kind(include_reminder=False)
-            self._manual_sprite = allowed[(allowed.index(current) + 1) % len(allowed)]
-            self._update_visual_transition()
-            self.update()
-        self._queue_message(self._care_clock.next_message(), change_pose=False)
+        self._click_token += 1
+        self._advance_image('double-click')
         self._start_gesture('happy')
         event.accept()
 
@@ -376,7 +386,6 @@ class DesktopPetWindow(QMainWindow):
     def mousePressEvent(self, event):
         """鼠标按下：左键进入拖拽/抓起状态，右键弹出菜单"""
         if event.button() == Qt.LeftButton:
-            self._interacted = True
             self._press_global = event.globalPos()
             self._did_drag = False
             self._dragging = True
@@ -418,12 +427,20 @@ class DesktopPetWindow(QMainWindow):
             self._dragging = False
             self._enter_idle()
             if self._did_drag:
+                self._suppress_double_until = time.monotonic() + QApplication.doubleClickInterval()/1000
                 self._anchor_x = self.x()
             else:
                 self._start_gesture('interact')
-                if self._appearance == 'sleep' and not self._greeting_pending:
-                    self._queue_message('轻轻碰到你啦，我在好好休息，也陪着你。')
-            self._drain_messages()
+                # Wait for Qt to distinguish a single click from a double click.
+                self._click_token += 1
+                token = self._click_token
+                QTimer.singleShot(QApplication.doubleClickInterval()+10, lambda: self._finish_single_click(token))
+
+    def _finish_single_click(self, token):
+        if self._closed or token != self._click_token or self._dragging:
+            return
+        self._interacted = True
+        self._drain_messages()
 
     def _show_context_menu(self, pos):
         """显示右键菜单"""
@@ -623,7 +640,7 @@ class DesktopPetWindow(QMainWindow):
 
     def closeEvent(self,event):
         self._closed = True
-        for timer in (self._timer,self._care_timer,self._schedule_timer):
+        for timer in (self._timer,self._schedule_timer):
             timer.stop()
         self._care_bubble.hide()
         if self._settings_dialog is not None:
@@ -667,6 +684,8 @@ def main():
     """应用入口"""
     QApplication.setAttribute(Qt.AA_EnableHighDpiScaling)
     QApplication.setAttribute(Qt.AA_UseHighDpiPixmaps)
+    if not getattr(sys, 'frozen', False) and os.environ.get('CHIIKAWA_DEV') == '1':
+        logging.basicConfig(level=logging.INFO,format='%(asctime)s %(message)s')
     app = QApplication(sys.argv)
     app.setWindowIcon(QIcon(str(resource('normal'))))
     app.setQuitOnLastWindowClosed(True)

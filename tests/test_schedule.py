@@ -40,14 +40,12 @@ class SchedulingTests(unittest.TestCase):
         self.assertFalse(contains(840,'12:30','14:00'))
 
     def test_periodic_interval_restart_and_no_repeat(self):
-        from unittest.mock import patch
-        with patch('schedule.time.monotonic',return_value=100):
-            key,msg=self.schedule.greeting(self.at('06:00'));self.schedule.delivered(key)
-        with patch('schedule.time.monotonic',return_value=399):
-            self.assertIsNone(self.schedule.greeting(self.at('11:00')))
-        with patch('schedule.time.monotonic',return_value=400):
-            self.assertNotEqual(msg,self.schedule.greeting(self.at('06:05'))[1])
-        self.assertIsNotNone(Schedule(SettingsStore(self.path)).greeting(self.at('09:00')))
+        self.assertEqual(self.schedule.poll(100),'startup')
+        key,msg=self.schedule.greeting(self.at('06:00'));self.schedule.delivered(key)
+        self.assertIsNone(self.schedule.poll(399))
+        self.assertEqual(self.schedule.poll(400),'periodic')
+        self.assertNotEqual(msg,self.schedule.greeting(self.at('06:05'))[1])
+        self.assertEqual(Schedule(SettingsStore(self.path)).poll(900),'startup')
 
     def test_dnd_cross_midnight_and_resume_current_only(self):
         self.store.data['dnd_enabled']=True
@@ -103,7 +101,7 @@ class SchedulingTests(unittest.TestCase):
 
     def test_preview_does_not_persist(self):
         self.schedule.preview=self.at('06:00');key,_=self.schedule.greeting();self.schedule.delivered(key)
-        self.assertIsNone(self.schedule.greeting())
+        self.assertIsNotNone(self.schedule.greeting())
         self.assertFalse(self.path.exists());self.assertEqual(self.store.data['greeted'],{})
 
     def test_original_care_timing_and_shuffle(self):
@@ -111,7 +109,6 @@ class SchedulingTests(unittest.TestCase):
         self.assertFalse(clock.poll(0,10));self.assertFalse(clock.poll(0,20));self.assertTrue(clock.poll(0,30))
         self.assertFalse(clock.poll(25,40));self.assertEqual(clock.active,0)
         self.assertFalse(clock.poll(0,200));self.assertEqual(clock.active,0)
-        self.assertEqual(len(set(clock.next_message() for _ in range(10))),10)
         self.assertEqual(len(CARE_MESSAGES),10)
 
 if __name__=='__main__':unittest.main()

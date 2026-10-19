@@ -1,0 +1,16 @@
+{
+  "path": "D:\\study\\product manager\\usagi-desktop-pet\\dist\\ChiikawaPet.exe",
+  "size": 44781463,
+  "sha256": "11661596dfc6c68d1e3d27102590dbeb0c855b6f74ce93e084c96358688964af",
+  "build": "success",
+  "verified_modules": [
+    "schedule",
+    "care",
+    "settings_ui",
+    "companion_config",
+    "body_animation"
+  ],
+  "atlas_count": 20,
+  "asset_bytes_match_source": true,
+  "tests": 57
+}

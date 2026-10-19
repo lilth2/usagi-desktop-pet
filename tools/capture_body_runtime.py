@@ -22,7 +22,7 @@ def grab(widget):
 
 with tempfile.TemporaryDirectory() as temp:
     p=DesktopPetWindow(SettingsStore(Path(temp)/'settings.json'))
-    for timer in (p._timer,p._care_timer,p._schedule_timer):timer.stop()
+    for timer in (p._timer,p._schedule_timer):timer.stop()
     p._store.data['greetings_enabled']=False
     p._schedule.preview=datetime(2026,10,19,14,0)
     p._refresh_schedule();p._manual_sprite='happy';p._fade_started=0

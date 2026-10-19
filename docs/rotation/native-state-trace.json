@@ -1,0 +1,20 @@
+[
+  {
+    "event": "startup",
+    "asset": "office",
+    "text_step": 1,
+    "next_due": 400
+  },
+  {
+    "event": "user-close",
+    "asset": "office",
+    "text_step": 1,
+    "next_due": 400
+  },
+  {
+    "event": "periodic",
+    "asset": "normal",
+    "text_step": 2,
+    "next_due": 700
+  }
+]

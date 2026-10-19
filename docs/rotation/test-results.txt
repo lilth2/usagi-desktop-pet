@@ -1,0 +1,6 @@
+Command: .venv\Scripts\python.exe -m unittest discover -s tests
+
+Ran 57 tests in 4.658s
+OK
+
+Native screenshot check: pet-before-close.png and pet-after-close.png are byte-identical.

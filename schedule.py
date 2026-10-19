@@ -2,12 +2,12 @@
 import copy
 import json
 import os
-import random
 import shutil
 import time
 import sys
-from datetime import datetime
+from datetime import datetime, timedelta
 from pathlib import Path
+from companion_config import CORE_MESSAGES, AUXILIARY_MESSAGES, CHARACTER_ASSETS, TEXT_ROTATION
 
 DEFAULTS = {
  'walking_enabled': True, 'care_enabled': True,
@@ -25,6 +25,25 @@ DEFAULTS = {
  'greeting_interval':5, 'dnd_enabled':False, 'dnd_start':'23:00', 'dnd_end':'06:00',
  'greeted':{},
 }
+
+
+def migrate_greetings(data):
+    """Idempotent copy-only migration; no custom text/history is removed."""
+    if not isinstance(data['greetings'],list): raise ValueError('问候配置格式不正确。')
+    for greeting in data['greetings']:
+        if not isinstance(greeting,dict) or not isinstance(greeting.get('messages'),list):
+            raise ValueError('问候文案格式不正确。')
+        fallback=greeting['messages'][0] if greeting.get('messages') else greeting.get('label','问候')
+        greeting.setdefault('primary', CORE_MESSAGES.get(greeting['id'], fallback))
+        if data.get('greeting_copy_version', 0) < 2:
+            for text in AUXILIARY_MESSAGES.get(greeting['id'], []):
+                if text not in greeting['messages']:
+                    greeting['messages'].append(text)
+    data['greeting_copy_version'] = 2
+
+
+migrate_greetings(DEFAULTS)
+
 
 
 def minute(value):
@@ -60,9 +79,11 @@ def validate(data):
         if not g['id'] or g['id'] in ids: raise ValueError('问候时段 ID 不能重复。')
         ids.add(g['id'])
         if minute(g['start'])==minute(g['end']): raise ValueError('问候开始和结束不能相同。')
-        if not g['label'].strip() or not g['messages']: raise ValueError('问候名称和文案不能为空。')
-        if any(g['label'] not in m or not m.strip() for m in g['messages']):
-            raise ValueError('每条问候文案必须包含该时段的问候名称。')
+        if not g['label'].strip() or not isinstance(g['messages'],list): raise ValueError('问候名称和辅助文案格式不正确。')
+        if not isinstance(g['primary'], str) or not g['primary'].strip():
+            raise ValueError('主文案不能为空。')
+        if any(not isinstance(m,str) or not m.strip() for m in g['messages']):
+            raise ValueError('辅助文案不能为空。')
     for m in range(1440):
         if sum(contains(m,g['start'],g['end']) for g in greetings)!=1:
             raise ValueError('问候时段必须覆盖全天，且不能重叠。')
@@ -90,11 +111,9 @@ class SettingsStore:
                 raw=json.loads(self.path.read_text(encoding='utf-8'))
                 if not isinstance(raw,dict): raise ValueError('配置根节点必须为对象')
                 self.data.update(raw)
-                # Extend only untouched factory text; custom messages remain exact.
-                for greeting in self.data['greetings']:
-                    default=next((g for g in DEFAULTS['greetings'] if g['id']==greeting['id']),None)
-                    if default and greeting['messages']==default['messages'][:1]:
-                        greeting['messages']=list(default['messages'])
+                if 'greeting_copy_version' not in raw:
+                    self.data.pop('greeting_copy_version',None)
+                migrate_greetings(self.data)
                 validate(self.data)
             except (ValueError,KeyError,TypeError,OSError) as e:
                 self.warning=f'配置读取失败，原文件已保留：{e}'
@@ -119,9 +138,13 @@ class Schedule:
         self.store=store
         self.preview=preview
         self.preview_greeted=set()
+        self.next_due=None
         self.last_delivery=None
-        self.last_messages={}
         self.candidate=None
+        self.period_key=None
+        self.text_step=0
+        self.auxiliary_index=0
+        self.last_auxiliary=None
 
     def now(self):
         return self.preview if self.preview is not None else datetime.now().astimezone()
@@ -134,23 +157,60 @@ class Schedule:
         if m<6*60 or m>=minute(d['evening_start']): return 'late'
         return 'normal'
 
+    def allowed_assets(self,now=None):
+        appearance=self.appearance(now)
+        rules={'sleep'} if appearance=='sleep' else {'ordinary','late'} if appearance=='late' else {'ordinary'}
+        return tuple(asset['id'] for asset in CHARACTER_ASSETS if asset['rule'] in rules)
+
+    def initial_asset(self):
+        if self.appearance()=='late':
+            variant=self.store.data['late_variant']
+            if variant=='rotate':
+                return 'late' if self.now().date().toordinal()%2 else 'late_scene'
+            return variant
+        return self.allowed_assets()[0]
+
+    def poll(self,clock=None):
+        """Consume at most ONE cycle. No backlog after resume or clock changes."""
+        clock=time.monotonic() if clock is None else clock
+        if self.next_due is not None and clock < self.next_due:
+            return None
+        startup=self.next_due is None
+        self.next_due=clock+self.store.data['greeting_interval']*60
+        return 'startup' if startup else 'periodic'
+
     def greeting(self,now=None):
         d=self.store.data; now=now or self.now()
-        if not d['greetings_enabled']: return None
         m=now.hour*60+now.minute
         g=next(g for g in d['greetings'] if contains(m,g['start'],g['end']))
+        period_date=now.date()
+        if minute(g['start'])>minute(g['end']) and m<minute(g['end']):
+            period_date-=timedelta(days=1)
+        key=f"{period_date.isoformat()}:{g['id']}"
+        if key!=self.period_key:
+            self.period_key=key;self.text_step=0;self.auxiliary_index=0
+            self.last_auxiliary=None;self.candidate=None
+        if not d['greetings_enabled']: return None
         if d['dnd_enabled'] and contains(m,d['dnd_start'],d['dnd_end']): return None
-        clock=time.monotonic()
-        if self.last_delivery is not None and clock-self.last_delivery < d['greeting_interval']*60:
-            return None
-        key=f"{now.date().isoformat()}:{g['id']}"
-        if self.candidate is None or self.candidate[0]!=key:
-            choices=[text for text in g['messages'] if text!=self.last_messages.get(g['id'])] or g['messages']
-            self.candidate=(key,random.choice(choices))
+        auxiliary=list(dict.fromkeys(text for text in g['messages'] if text!=g['primary']))
+        if TEXT_ROTATION[self.text_step % len(TEXT_ROTATION)]=='primary' or not auxiliary:
+            text=g['primary']
+        else:
+            # Preserve order, skip the last auxiliary if a list was edited.
+            index=self.auxiliary_index % len(auxiliary)
+            if len(auxiliary)>1 and auxiliary[index]==self.last_auxiliary:
+                index=(index+1)%len(auxiliary)
+            text=auxiliary[index]
+        self.candidate=(key,text)
         return self.candidate
 
     def delivered(self,key):
+        if not self.candidate or key!=self.candidate[0]: return
+        g=next(g for g in self.store.data['greetings'] if g['id']==key.rsplit(':',1)[-1])
+        if self.candidate[1]!=g['primary']:
+            auxiliary=list(dict.fromkeys(text for text in g['messages'] if text!=g['primary']))
+            self.last_auxiliary=self.candidate[1]
+            self.auxiliary_index=auxiliary.index(self.last_auxiliary)+1
+        self.text_step+=1
         self.last_delivery=time.monotonic()
-        if self.candidate and self.candidate[0]==key:
-            self.last_messages[key.rsplit(':',1)[-1]]=self.candidate[1]
         self.candidate=None

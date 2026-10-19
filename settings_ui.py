@@ -39,25 +39,26 @@ class SettingsDialog(QDialog):
         note.setWordWrap(True); f.addRow(note)
         tabs.addTab(appearance,'外观时间')
         self.variant=QComboBox()
-        for label,value in [('按日期轮换两张深夜图','rotate'),('1.png · 躺着看手机','late'),('7.png · 夜景背影','late_scene')]:
+        for label,value in [('按日期选择深夜初始图','rotate'),('1.png · 躺着看手机','late'),('7.png · 夜景背影','late_scene')]:
             self.variant.addItem(label,value)
         self.variant.setCurrentIndex(max(0,self.variant.findData(pet._store.data['late_variant'])))
-        f.addRow('深夜素材',self.variant)
+        f.addRow('深夜初始偏好（轮播含全部合规图片）',self.variant)
         greetings=QWidget(); gl=QVBoxLayout(greetings)
-        hint=QLabel('时段包含开始、不包含结束，需覆盖全天且不重叠。\n多条文案请用「｜」分隔，每条需包含该时段的问候名称。')
+        hint=QLabel('时段包含开始、不包含结束，需覆盖全天且不重叠。\n主文案与辅助文案交替轮播；多条辅助文案用「｜」分隔，原文保留。')
         hint.setWordWrap(True); gl.addWidget(hint)
         controls=QFormLayout();gl.addLayout(controls)
         self.interval=QSpinBox();self.interval.setRange(1,1440);self.interval.setSuffix(' 分钟');self.interval.setValue(pet._store.data['greeting_interval']);controls.addRow('周期问候间隔',self.interval)
         box=QCheckBox('启用问候免打扰');box.setChecked(pet._store.data['dnd_enabled']);self.boxes['dnd_enabled']=box;controls.addRow(box)
         for key,label in [('dnd_start','免打扰开始'),('dnd_end','免打扰结束')]:
             edit=QTimeEdit(QTime.fromString(pet._store.data[key],'HH:mm'));edit.setDisplayFormat('HH:mm');self.times[key]=edit;controls.addRow(label,edit)
-        self.table=QTableWidget(len(pet._store.data['greetings']),4)
-        self.table.setHorizontalHeaderLabels(['问候名称','开始','结束','文案'])
+        self.table=QTableWidget(len(pet._store.data['greetings']),5)
+        self.table.setHorizontalHeaderLabels(['问候名称','开始','结束','辅助文案','主文案'])
         self.table.horizontalHeader().setSectionResizeMode(QHeaderView.Interactive)
         self.table.horizontalHeader().setSectionResizeMode(3,QHeaderView.Stretch)
         for row,g in enumerate(pet._store.data['greetings']):
-            for col,val in enumerate([g['label'],g['start'],g['end'],'｜'.join(g['messages'])]):
+            for col,val in enumerate([g['label'],g['start'],g['end'],'｜'.join(g['messages']),g['primary']]):
                 self.table.setItem(row,col,QTableWidgetItem(val))
+        self.table.setColumnWidth(4,240)
         self.table.setColumnWidth(0,75);self.table.setColumnWidth(1,65);self.table.setColumnWidth(2,65)
         self.table.setWordWrap(True)
         self.table.setTextElideMode(Qt.ElideNone)
@@ -100,8 +101,8 @@ class SettingsDialog(QDialog):
         for key,box in self.boxes.items():data[key]=box.isChecked()
         for key,t in self.times.items():data[key]=t.time().toString('HH:mm')
         for row,g in enumerate(data['greetings']):
-            values=[self.table.item(row,col).text().strip() if self.table.item(row,col) else '' for col in range(4)]
-            g.update(label=values[0],start=values[1],end=values[2],messages=[x.strip() for x in values[3].split('｜') if x.strip()])
+            values=[self.table.item(row,col).text().strip() if self.table.item(row,col) else '' for col in range(5)]
+            g.update(label=values[0],start=values[1],end=values[2],messages=[x.strip() for x in values[3].split('｜') if x.strip()],primary=values[4])
         old=self.pet._store.data
         try:
             validate(data);self.pet._store.data=data;self.pet._store.save()

@@ -1,6 +1,5 @@
 """Local activity timing. Reads only time since last input, never input contents."""
 import ctypes
-import random
 import sys
 import time
 
@@ -9,18 +8,7 @@ from PyQt5.QtCore import Qt, QTimer, pyqtSignal, QRectF, QEvent, QRect
 from PyQt5.QtGui import QPainterPath, QRegion, QPainter, QColor, QPen
 from PyQt5.QtWidgets import QLabel, QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QScrollArea, QApplication
 
-CARE_MESSAGES = (
-    "忙了好一会儿，看看远处，让眼睛歇一歇吧。",
-    "起来走两步，伸伸肩膀，我在这里等你。",
-    "喝口水吧～照顾好自己也是今天很重要的事。",
-    "辛苦啦，不必一直绷着。慢慢呼吸，给自己一点空隙。",
-    "如果今天有点难，也没关系。你可以按自己的节奏来。",
-    "手腕和脖子还舒服吗？换个姿势，放松一下吧。",
-    "事情做不完也可以先休息，你的感受同样值得被照顾。",
-    "送你一个小小的抱抱。愿你这一刻能轻松一点。",
-    "专注了这么久，已经很努力啦。给自己几分钟休息吧。",
-    "别忘了按时吃饭。忙碌的时候，也要对自己温柔一点。",
-)
+from companion_config import CARE_MESSAGES
 
 
 def idle_seconds():
@@ -40,7 +28,6 @@ class CareClock:
         self.interval, self.rest = interval, rest
         self.active = 0
         self.last = time.monotonic()
-        self.messages = []
 
     def poll(self, idle, now=None):
         now = time.monotonic() if now is None else now
@@ -56,15 +43,11 @@ class CareClock:
             return True
         return False
 
-    def next_message(self):
-        if not self.messages:
-            self.messages = list(CARE_MESSAGES)
-            random.shuffle(self.messages)
-        return self.messages.pop()
 
 
 class CareBubble(QWidget):
     dismissed = pyqtSignal()
+    user_closed = pyqtSignal()
     def __init__(self, parent):
         super().__init__(parent, Qt.Tool | Qt.FramelessWindowHint | Qt.WindowStaysOnTopHint | Qt.WindowDoesNotAcceptFocus)
         self.pet=parent
@@ -79,7 +62,7 @@ class CareBubble(QWidget):
         row=QHBoxLayout();row.addStretch()
         self.close_button=QPushButton('×');self.close_button.setFixedSize(24,22)
         self.close_button.setToolTip('关闭气泡');self.close_button.setFocusPolicy(Qt.NoFocus)
-        self.close_button.clicked.connect(self.hide);row.addWidget(self.close_button);layout.addLayout(row)
+        self.close_button.clicked.connect(self.dismiss_by_user);row.addWidget(self.close_button);layout.addLayout(row)
         self.label=QLabel();self.label.setWordWrap(True);self.label.setTextFormat(Qt.PlainText)
         self.label.setStyleSheet('background: transparent; border: none;')
         self.scroll=QScrollArea();self.scroll.setWidgetResizable(True);self.scroll.setWidget(self.label)
@@ -90,6 +73,15 @@ class CareBubble(QWidget):
         self.follow_timer=QTimer(self);self.follow_timer.timeout.connect(self.follow);self.follow_timer.start(50)
 
     def text(self):return self.label.text()
+
+    def dismiss_by_user(self):
+        self.user_closed.emit()
+        self.hide()
+
+    def mousePressEvent(self,event):event.accept()
+    def mouseReleaseEvent(self,event):event.accept()
+    def mouseDoubleClickEvent(self,event):event.accept()
+    def mouseMoveEvent(self,event):event.accept()
 
     def paintEvent(self,event):
         painter=QPainter(self);painter.setRenderHint(QPainter.Antialiasing)

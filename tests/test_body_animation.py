@@ -78,7 +78,7 @@ class BodyRuntimeTests(unittest.TestCase):
     def setUp(self):
         self.temp=tempfile.TemporaryDirectory()
         self.pet=DesktopPetWindow(SettingsStore(Path(self.temp.name)/'settings.json'))
-        for t in (self.pet._timer,self.pet._schedule_timer,self.pet._care_timer):t.stop()
+        for t in (self.pet._timer,self.pet._schedule_timer):t.stop()
 
     def tearDown(self):
         self.pet.close();APP.processEvents();self.temp.cleanup()
