@@ -102,7 +102,13 @@ def validate(data):
 class SettingsStore:
     def __init__(self,path=None):
         # Keep stable internal identity so legacy launchers/paths remain valid.
-        self.path=Path(path) if path else Path(os.environ.get('APPDATA',str(Path.home()))) / 'UsagiPet' / 'settings.json'
+        if path:
+            self.path=Path(path)
+        elif sys.platform=='darwin':
+            legacy=Path.home()/'UsagiPet'/'settings.json'
+            self.path=legacy if legacy.exists() else Path.home()/'Library'/'Application Support'/'ChiikawaPet'/'settings.json'
+        else:
+            self.path=Path(os.environ.get('APPDATA',str(Path.home()))) / 'UsagiPet' / 'settings.json'
         self.data=copy.deepcopy(DEFAULTS)
         self.warning=''
         self.writable=True

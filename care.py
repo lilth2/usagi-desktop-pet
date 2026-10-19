@@ -2,6 +2,7 @@
 import ctypes
 import sys
 import time
+from functools import lru_cache
 
 from theme import CREAM, INK, BORDER, BUBBLE_STYLE
 from PyQt5.QtCore import Qt, QTimer, pyqtSignal, QRectF, QEvent, QRect
@@ -11,7 +12,22 @@ from PyQt5.QtWidgets import QLabel, QWidget, QVBoxLayout, QHBoxLayout, QPushButt
 from companion_config import CARE_MESSAGES
 
 
+@lru_cache(maxsize=1)
+def _mac_idle_reader():
+    library=ctypes.CDLL('/System/Library/Frameworks/CoreGraphics.framework/CoreGraphics')
+    reader=library.CGEventSourceSecondsSinceLastEventType
+    reader.argtypes=[ctypes.c_int32,ctypes.c_uint32]
+    reader.restype=ctypes.c_double
+    return reader
+
+
 def idle_seconds():
+    if sys.platform == 'darwin':
+        try:
+            value=_mac_idle_reader()(0,0xffffffff)
+            return value if 0<=value<float('inf') else None
+        except (OSError,AttributeError):
+            return None
     if sys.platform != "win32":
         return None
     class LastInput(ctypes.Structure):
@@ -58,6 +74,8 @@ class CareBubble(QWidget):
         self._tail_coordinate=80
         self._anchor_bounds={}
         self.setAttribute(Qt.WA_ShowWithoutActivating)
+        if sys.platform == 'darwin':
+            self.setAttribute(Qt.WA_MacAlwaysShowToolWindow)
         self.setAttribute(Qt.WA_TranslucentBackground)
         self.setFocusPolicy(Qt.NoFocus)
         self.setWindowTitle('吉伊卡哇 · 关怀')

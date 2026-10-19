@@ -684,6 +684,9 @@ def main():
     if not getattr(sys, 'frozen', False) and os.environ.get('CHIIKAWA_DEV') == '1':
         logging.basicConfig(level=logging.INFO,format='%(asctime)s %(message)s')
     app = QApplication(sys.argv)
+    if '--package-check' in sys.argv:
+        from package_check import run
+        sys.exit(run(app))
     app.setWindowIcon(QIcon(str(resource('normal'))))
     app.setQuitOnLastWindowClosed(True)
     pet = DesktopPetWindow()
