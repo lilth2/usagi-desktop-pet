@@ -62,3 +62,17 @@ pyinstaller --onefile --windowed --name "UsagiPet" ^
 | `FRAME_INTERVAL` | 动画帧间隔 | 40ms (25FPS) |
 | `WALK_INTERVAL_MIN/MAX` | 行走触发间隔 | 3-8s |
 | `WALK_SPEED_MIN/MAX` | 行走速度 | 3-5 px/帧 |
+
+
+## 本地陪聊版
+
+本项目基于 [ruochengwu/usagi-desktop-pet](https://github.com/ruochengwu/usagi-desktop-pet) 修改。
+
+- 单击乌萨奇，或右键选择「聊聊天」，打开对话窗口。
+- 输入文字后按回车或点发送；也可点「你好」「今天好累」「抱抱」快捷按钮。
+- 根据问候、心情、学习、休息等关键词返回预设台词，无需 API 密钥，不联网，不是 AI 大模型。
+- 聊天窗口打开时暂停触发新的随机走动；左键拖动仍然保留。
+- 不保存聊天记录；关闭聊天窗口即清空。
+
+安装：`python -m pip install -r requirements.txt`，启动：`python desktop_pet.py`。
+Windows 已配置本地虚拟环境时，可双击「启动乌萨奇.bat」。其他电脑请先运行 `python -m venv .venv`，再运行 `.venv\Scripts\python -m pip install -r requirements.txt`。

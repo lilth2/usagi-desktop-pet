@@ -24,6 +24,7 @@ import math
 import random
 import os
 from enum import Enum
+from chat import ChatWindow
 
 from PyQt5.QtWidgets import QApplication, QMainWindow, QMenu, QAction
 from PyQt5.QtCore import Qt, QTimer, QPoint
@@ -140,6 +141,7 @@ class DesktopPetWindow(QMainWindow):
 
     def __init__(self):
         super().__init__()
+        self._chat = None
         self._load_pixmap()
         self._setup_window()
         self._setup_state()
@@ -229,6 +231,8 @@ class DesktopPetWindow(QMainWindow):
     def mousePressEvent(self, event):
         """鼠标按下：左键进入拖拽/抓起状态，右键弹出菜单"""
         if event.button() == Qt.LeftButton:
+            self._press_global = event.globalPos()
+            self._did_drag = False
             self._dragging = True
             self._drag_offset = event.pos()
             # 停止 Walk GIF，启动 Grabbed GIF
@@ -247,6 +251,9 @@ class DesktopPetWindow(QMainWindow):
     def mouseMoveEvent(self, event):
         """鼠标移动：拖拽窗口跟随，并限制不超出屏幕边界"""
         if self._dragging:
+            if (event.globalPos() - self._press_global).manhattanLength() < QApplication.startDragDistance() and not self._did_drag:
+                return
+            self._did_drag = True
             new_pos = event.globalPos() - self._drag_offset
             geom = self._get_screen_geometry()
             if geom:
@@ -263,10 +270,22 @@ class DesktopPetWindow(QMainWindow):
         if event.button() == Qt.LeftButton and self._dragging:
             self._dragging = False
             self._enter_idle()
+            if not self._did_drag:
+                self._show_chat()
+
+    def _show_chat(self):
+        if self._chat is None:
+            self._chat = ChatWindow(self)
+        self._chat.show()
+        self._chat.raise_()
+        self._chat.activateWindow()
+        self._chat.input.setFocus()
 
     def _show_context_menu(self, pos):
         """显示右键菜单"""
         menu = QMenu(self)
+        chat_action = menu.addAction("聊聊天")
+        chat_action.triggered.connect(self._show_chat)
         exit_action = QAction("退出程序 (&Q)", self)
         exit_action.triggered.connect(QApplication.quit)
         menu.addAction(exit_action)
@@ -336,7 +355,7 @@ class DesktopPetWindow(QMainWindow):
                 anim.blink_timer_ms = 0
 
         # Walk 触发
-        if self._state_timer_ms >= self._next_walk_ms:
+        if self._state_timer_ms >= self._next_walk_ms and not (self._chat and self._chat.isVisible()):
             self._enter_walk()
 
     def _enter_walk(self):
