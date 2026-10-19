@@ -131,6 +131,7 @@ class DesktopPetWindow(QMainWindow):
             from datetime import datetime
             self._schedule.preview = datetime.fromisoformat(sys.argv[sys.argv.index('--preview-time')+1])
         self._appearance = self._schedule.appearance()
+        self._manual_sprite = None
         self._messages = deque()
         self._greeting_pending = None
         self._interacted = False
@@ -167,6 +168,7 @@ class DesktopPetWindow(QMainWindow):
             QTimer.singleShot(1000, lambda: self._queue_message('；'.join(self._asset_warnings)))
 
     def _apply_settings(self):
+        self._manual_sprite = None
         self._walking_enabled = self._store.data['walking_enabled']
         if self._care_enabled != self._store.data['care_enabled']:
             self._care_clock = CareClock()
@@ -191,6 +193,7 @@ class DesktopPetWindow(QMainWindow):
         current = self._schedule.appearance()
         if current != self._appearance:
             self._appearance = current
+            self._manual_sprite = None
             self._enter_idle()
         self._update_visual_transition()
         # Replace deferred greeting with only the CURRENT period, never backlog.
@@ -270,9 +273,11 @@ class DesktopPetWindow(QMainWindow):
         self._movie_grabbed = None
         self._pixmap_walk2 = None
 
-    def _current_pixmap(self):
-        if time.monotonic() < self._reminder_until:
-            return self._pixmaps['normal']
+    def _sprite_kind(self, include_reminder=True):
+        if include_reminder and time.monotonic() < self._reminder_until:
+            return 'normal'
+        if self._manual_sprite is not None:
+            return self._manual_sprite
         kind = self._appearance
         if kind == 'late':
             variant = self._store.data['late_variant']
@@ -280,7 +285,28 @@ class DesktopPetWindow(QMainWindow):
                 kind = 'late' if self._schedule.now().date().toordinal() % 2 else 'late_scene'
             else:
                 kind = variant if variant in ('late', 'late_scene') else 'late'
-        return self._pixmaps.get(kind, self._pixmap_idle)
+        return kind
+
+    def _current_pixmap(self):
+        return self._pixmaps.get(self._sprite_kind(), self._pixmap_idle)
+
+    def mouseDoubleClickEvent(self, event):
+        if event.button() != Qt.LeftButton:
+            super().mouseDoubleClickEvent(event)
+            return
+        self._dragging = False
+        self._interacted = False
+        self._enter_idle()
+        allowed = ('normal', 'late', 'late_scene') if self._appearance == 'late' else (self._appearance,)
+        if len(allowed) > 1:
+            # Reminder pose is temporary; cycle the underlying character choice.
+            current = self._sprite_kind(include_reminder=False)
+            self._manual_sprite = allowed[(allowed.index(current) + 1) % len(allowed)]
+            self._update_visual_transition()
+            self.update()
+        else:
+            self._queue_message('这个时段目前只有一张可用图片。晚间可以双击切换深夜图片。')
+        event.accept()
 
     def _setup_window(self):
         """配置透明无边框置顶窗口"""

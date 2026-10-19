@@ -12,6 +12,7 @@ test_required_boundaries (test_schedule.SchedulingTests.test_required_boundaries
 test_restart_dedup (test_schedule.SchedulingTests.test_restart_dedup) ... ok
 test_timezone_change_recomputes (test_schedule.SchedulingTests.test_timezone_change_recomputes) ... ok
 test_wake_only_current_period (test_schedule.SchedulingTests.test_wake_only_current_period) ... ok
+test_double_click_cycles_allowed_art_and_resets_at_boundary (test_ui.DesktopTests.test_double_click_cycles_allowed_art_and_resets_at_boundary) ... ok
 test_drag_updates_anchor_and_grab_scale (test_ui.DesktopTests.test_drag_updates_anchor_and_grab_scale) ... ok
 test_important_messages_queue_before_greeting (test_ui.DesktopTests.test_important_messages_queue_before_greeting) ... ok
 test_long_bounded_walk_reverses (test_ui.DesktopTests.test_long_bounded_walk_reverses) ... ok
@@ -24,6 +25,6 @@ test_sleep_stops_walk_but_delivers_original_reminder (test_ui.DesktopTests.test_
 test_transparent_topmost_assets_and_missing_fallback (test_ui.DesktopTests.test_transparent_topmost_assets_and_missing_fallback) ... ok
 
 ----------------------------------------------------------------------
-Ran 24 tests in 2.094s
+Ran 25 tests in 1.860s
 
 OK

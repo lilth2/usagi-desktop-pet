@@ -54,6 +54,25 @@ class DesktopTests(unittest.TestCase):
             self.assertLessEqual(abs(self.pet.x()-self.pet._anchor_x),WALK_RADIUS)
         self.assertEqual(directions,{-1,1});self.assertEqual(self.pet._state,PetState.WALK)
 
+    def test_double_click_cycles_allowed_art_and_resets_at_boundary(self):
+        self.current=datetime(2026,10,19,18,0);self.pet._refresh_schedule()
+        self.pet._care_bubble.hide()
+        seen=set()
+        for _ in range(3):
+            QTest.mouseDClick(self.pet,Qt.LeftButton,pos=QPoint(60,60))
+            QTest.mouseRelease(self.pet,Qt.LeftButton,pos=QPoint(60,60))
+            seen.add(self.pet._sprite_kind(False))
+            self.assertFalse(self.pet._dragging)
+            chosen=self.pet._manual_sprite
+            self.pet._refresh_schedule()
+            self.assertEqual(self.pet._manual_sprite,chosen)
+        self.assertEqual(seen,{'normal','late','late_scene'})
+        self.current=datetime(2026,10,19,23,0);self.pet._refresh_schedule()
+        self.assertIsNone(self.pet._manual_sprite)
+        self.pet._care_bubble.hide()
+        QTest.mouseDClick(self.pet,Qt.LeftButton,pos=QPoint(60,60))
+        self.assertIsNone(self.pet._manual_sprite)
+
     def test_drag_updates_anchor_and_grab_scale(self):
         p=self.pet;initial=p.pos();local=QPoint(60,60);global_pos=p.mapToGlobal(local)
         QTest.mousePress(p,Qt.LeftButton,pos=local)
