@@ -39,19 +39,21 @@ class SchedulingTests(unittest.TestCase):
         self.assertFalse(contains(360,'23:00','06:00'))
         self.assertFalse(contains(840,'12:30','14:00'))
 
-    def test_restart_dedup(self):
-        key,_=self.schedule.greeting(self.at('06:00'))
-        self.schedule.delivered(key)
-        self.assertIsNone(Schedule(SettingsStore(self.path)).greeting(self.at('09:00')))
-        self.assertIsNotNone(self.schedule.greeting(self.at('11:00')))
+    def test_periodic_interval_restart_and_no_repeat(self):
+        from unittest.mock import patch
+        with patch('schedule.time.monotonic',return_value=100):
+            key,msg=self.schedule.greeting(self.at('06:00'));self.schedule.delivered(key)
+        with patch('schedule.time.monotonic',return_value=399):
+            self.assertIsNone(self.schedule.greeting(self.at('11:00')))
+        with patch('schedule.time.monotonic',return_value=400):
+            self.assertNotEqual(msg,self.schedule.greeting(self.at('06:05'))[1])
+        self.assertIsNotNone(Schedule(SettingsStore(self.path)).greeting(self.at('09:00')))
 
-    def test_midnight_calendar_date_and_restart(self):
-        key,_=self.schedule.greeting(self.at('23:00'));self.schedule.delivered(key)
-        tomorrow=datetime(2026,10,20,0,0)
-        key2,_=self.schedule.greeting(tomorrow)
-        self.assertNotEqual(key,key2)
-        self.schedule.delivered(key2)
-        self.assertIsNone(Schedule(SettingsStore(self.path)).greeting(tomorrow))
+    def test_dnd_cross_midnight_and_resume_current_only(self):
+        self.store.data['dnd_enabled']=True
+        self.assertIsNone(self.schedule.greeting(self.at('23:00')))
+        self.assertIsNone(self.schedule.greeting(self.at('05:59')))
+        self.assertIn('早上好',self.schedule.greeting(self.at('06:00'))[1])
 
     def test_wake_only_current_period(self):
         self.schedule.greeting(self.at('06:00'))

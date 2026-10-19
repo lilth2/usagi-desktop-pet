@@ -27,10 +27,25 @@ class DesktopTests(unittest.TestCase):
         self.pet._schedule.now=lambda:self.current
         self.pet._refresh_schedule()
         self.pet._care_bubble.hide()
+        self.pet._schedule.last_delivery=None
 
     def tearDown(self):
         for w in APP.topLevelWidgets():w.close()
         APP.processEvents();self.temp.cleanup()
+
+    def test_bubble_tracks_move_clamps_scrolls_closes_and_restores(self):
+        p=self.pet;b=p._care_bubble
+        p.move(500,400);p._queue_message('长文本测试。'*500);APP.processEvents()
+        before=b.pos();p.move(540,430);APP.processEvents()
+        self.assertEqual(b.pos()-before,QPoint(40,30))
+        for pos in (QPoint(0,0),QPoint(1800,950)):
+            p.move(pos);APP.processEvents()
+            self.assertTrue(p.screen().availableGeometry().contains(b.frameGeometry()))
+        self.assertGreater(b.scroll.verticalScrollBar().maximum(),0)
+        p.hide();APP.processEvents();self.assertFalse(b.isVisible())
+        p.show();APP.processEvents();self.assertTrue(b.isVisible())
+        self.assertTrue(b.windowFlags() & Qt.WindowDoesNotAcceptFocus)
+        QTest.mouseClick(b.close_button,Qt.LeftButton);self.assertFalse(b.isVisible())
 
     def test_transparent_topmost_assets_and_missing_fallback(self):
         self.assertTrue(self.pet.testAttribute(Qt.WA_TranslucentBackground))

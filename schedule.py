@@ -4,6 +4,7 @@ import json
 import os
 import random
 import shutil
+import time
 import sys
 from datetime import datetime
 from pathlib import Path
@@ -16,11 +17,12 @@ DEFAULTS = {
  'late_variant':'rotate',
  'animation_mode':'body',
  'greetings':[
-  {'id':'morning','start':'06:00','end':'11:00','label':'早上好','messages':['早上好。新的一天，慢慢来，我陪着你。']},
-  {'id':'noon','start':'11:00','end':'14:00','label':'中午好','messages':['中午好。忙完这一会儿，也记得好好吃饭。']},
-  {'id':'afternoon','start':'14:00','end':'18:00','label':'下午好','messages':['下午好。愿接下来的时间轻松一点。']},
-  {'id':'evening','start':'18:00','end':'06:00','label':'晚上好','messages':['晚上好。今天辛苦了，我在这里陪你。']},
+  {'id':'morning','start':'06:00','end':'11:00','label':'早上好','messages':['早上好。新的一天，慢慢来，我陪着你。','早上好。记得喝点水，今天也慢慢来。']},
+  {'id':'noon','start':'11:00','end':'14:00','label':'中午好','messages':['中午好。忙完这一会儿，也记得好好吃饭。','中午好。让眼睛歇一会儿吧。']},
+  {'id':'afternoon','start':'14:00','end':'18:00','label':'下午好','messages':['下午好。愿接下来的时间轻松一点。','下午好。伸伸肩膀，我陪你继续。']},
+  {'id':'evening','start':'18:00','end':'06:00','label':'晚上好','messages':['晚上好。今天辛苦了，我在这里陪你。','晚上好。放松一下，照顾好自己。']},
  ],
+ 'greeting_interval':5, 'dnd_enabled':False, 'dnd_start':'23:00', 'dnd_end':'06:00',
  'greeted':{},
 }
 
@@ -40,6 +42,11 @@ def contains(current,start,end):
 
 
 def validate(data):
+    if not isinstance(data['greeting_interval'],int) or not 1<=data['greeting_interval']<=1440:
+        raise ValueError('问候间隔应为1–1440分钟。')
+    if not isinstance(data['dnd_enabled'],bool): raise ValueError('免打扰开关格式错误。')
+    minute(data['dnd_start']);minute(data['dnd_end'])
+    if data['dnd_start']==data['dnd_end']: raise ValueError('免打扰开始和结束不能相同。')
     if data['animation_mode'] not in ('whole','body','reduced'):
         raise ValueError('动画模式必须为仅整图、整图＋身体或减少动画。')
     for key in ('walking_enabled','care_enabled','greetings_enabled','appearance_enabled','nap_enabled'):
@@ -83,6 +90,11 @@ class SettingsStore:
                 raw=json.loads(self.path.read_text(encoding='utf-8'))
                 if not isinstance(raw,dict): raise ValueError('配置根节点必须为对象')
                 self.data.update(raw)
+                # Extend only untouched factory text; custom messages remain exact.
+                for greeting in self.data['greetings']:
+                    default=next((g for g in DEFAULTS['greetings'] if g['id']==greeting['id']),None)
+                    if default and greeting['messages']==default['messages'][:1]:
+                        greeting['messages']=list(default['messages'])
                 validate(self.data)
             except (ValueError,KeyError,TypeError,OSError) as e:
                 self.warning=f'配置读取失败，原文件已保留：{e}'
@@ -107,6 +119,9 @@ class Schedule:
         self.store=store
         self.preview=preview
         self.preview_greeted=set()
+        self.last_delivery=None
+        self.last_messages={}
+        self.candidate=None
 
     def now(self):
         return self.preview if self.preview is not None else datetime.now().astimezone()
@@ -124,14 +139,18 @@ class Schedule:
         if not d['greetings_enabled']: return None
         m=now.hour*60+now.minute
         g=next(g for g in d['greetings'] if contains(m,g['start'],g['end']))
-        # Calendar date + stable period ID, including across midnight/DST.
+        if d['dnd_enabled'] and contains(m,d['dnd_start'],d['dnd_end']): return None
+        clock=time.monotonic()
+        if self.last_delivery is not None and clock-self.last_delivery < d['greeting_interval']*60:
+            return None
         key=f"{now.date().isoformat()}:{g['id']}"
-        if key in d['greeted'] or (self.preview is not None and key in self.preview_greeted): return None
-        return key, random.choice(g['messages'])
+        if self.candidate is None or self.candidate[0]!=key:
+            choices=[text for text in g['messages'] if text!=self.last_messages.get(g['id'])] or g['messages']
+            self.candidate=(key,random.choice(choices))
+        return self.candidate
 
     def delivered(self,key):
-        if self.preview is not None:
-            self.preview_greeted.add(key)
-            return
-        self.store.data['greeted'][key]=True
-        self.store.save()
+        self.last_delivery=time.monotonic()
+        if self.candidate and self.candidate[0]==key:
+            self.last_messages[key.rsplit(':',1)[-1]]=self.candidate[1]
+        self.candidate=None

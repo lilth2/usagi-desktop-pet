@@ -235,7 +235,7 @@ class DesktopPetWindow(QMainWindow):
     def _drain_messages(self):
         if self._closed:
             return
-        if self._care_bubble.isVisible() or self._dragging or self._menu_open:
+        if not self.isVisible() or self.isMinimized() or self._care_bubble.active or self._dragging or self._menu_open:
             return
         if self._messages:
             self._enter_idle()
@@ -244,6 +244,9 @@ class DesktopPetWindow(QMainWindow):
             self._update_visual_transition()
             self._care_bubble.present(text, self)
         elif self._greeting_pending and (self._appearance != 'sleep' or self._interacted):
+            self._greeting_pending = self._schedule.greeting()
+            if not self._greeting_pending:
+                return
             key, text = self._greeting_pending
             self._greeting_pending = None
             try: self._schedule.delivered(key)

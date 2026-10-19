@@ -4,7 +4,7 @@ from datetime import datetime
 from PyQt5.QtCore import Qt, QTime, QTimer
 from PyQt5.QtWidgets import (QDialog,QVBoxLayout,QFormLayout,QWidget,QTabWidget,
  QCheckBox,QTimeEdit,QTableWidget,QTableWidgetItem,QHeaderView,QDialogButtonBox,
- QLabel,QScrollArea,QMessageBox,QPushButton,QHBoxLayout,QComboBox,QLineEdit)
+ QLabel,QScrollArea,QMessageBox,QPushButton,QHBoxLayout,QComboBox,QLineEdit,QSpinBox)
 from theme import DIALOG_STYLE
 from schedule import validate
 
@@ -46,6 +46,11 @@ class SettingsDialog(QDialog):
         greetings=QWidget(); gl=QVBoxLayout(greetings)
         hint=QLabel('时段包含开始、不包含结束，需覆盖全天且不重叠。\n多条文案请用「｜」分隔，每条需包含该时段的问候名称。')
         hint.setWordWrap(True); gl.addWidget(hint)
+        controls=QFormLayout();gl.addLayout(controls)
+        self.interval=QSpinBox();self.interval.setRange(1,1440);self.interval.setSuffix(' 分钟');self.interval.setValue(pet._store.data['greeting_interval']);controls.addRow('周期问候间隔',self.interval)
+        box=QCheckBox('启用问候免打扰');box.setChecked(pet._store.data['dnd_enabled']);self.boxes['dnd_enabled']=box;controls.addRow(box)
+        for key,label in [('dnd_start','免打扰开始'),('dnd_end','免打扰结束')]:
+            edit=QTimeEdit(QTime.fromString(pet._store.data[key],'HH:mm'));edit.setDisplayFormat('HH:mm');self.times[key]=edit;controls.addRow(label,edit)
         self.table=QTableWidget(len(pet._store.data['greetings']),4)
         self.table.setHorizontalHeaderLabels(['问候名称','开始','结束','文案'])
         self.table.horizontalHeader().setSectionResizeMode(QHeaderView.Interactive)
@@ -89,6 +94,7 @@ class SettingsDialog(QDialog):
 
     def save(self):
         data=copy.deepcopy(self.pet._store.data)
+        data['greeting_interval']=self.interval.value()
         data['late_variant']=self.variant.currentData()
         data['animation_mode']=self.animation_mode.currentData()
         for key,box in self.boxes.items():data[key]=box.isChecked()

@@ -92,7 +92,7 @@ class BodyRuntimeTests(unittest.TestCase):
             if mode!='body':self.assertEqual(p._body_frame().cacheKey(),p._current_pixmap().cacheKey())
         p._appearance='normal';p._state_timer_ms=999999;p._update_idle()
         self.assertEqual(p._state,PetState.IDLE)
-        p._show_care();self.assertTrue(p._care_bubble.isVisible())
+        p.show();APP.processEvents();p._show_care();self.assertTrue(p._care_bubble.isVisible())
 
     def test_gesture_drives_real_frame_and_keeps_position(self):
         p=self.pet;p._manual_sprite='happy';p._store.data['animation_mode']='body'
