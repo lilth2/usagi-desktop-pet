@@ -89,7 +89,7 @@ class RotationTests(unittest.TestCase):
         self.assertEqual(json.loads(self.path.with_suffix('.json.bak').read_text(encoding='utf-8')), raw)
 
     def test_one_two_and_all_asset_rounds(self):
-        for count in (1, 2, 4, 6):
+        for count in (1, 2, 4, 6, 7):
             allowed = tuple(str(i) for i in range(count))
             rotation = ImageRotation()
             current = None
@@ -101,6 +101,12 @@ class RotationTests(unittest.TestCase):
                 self.assertEqual(set(result[start:start+count]), set(allowed))
             if count > 1:
                 self.assertTrue(all(a != b for a, b in zip(result, result[1:])))
+
+    def test_initial_image_still_follows_time(self):
+        for hour,minute,expected in ((8,0,'normal'),(12,45,'sleep'),(23,30,'sleep'),(19,0,'late_scene')):
+            self.schedule.preview=datetime(2026,10,19,hour,minute)
+            self.store.data['late_variant']='late_scene'
+            self.assertEqual(self.schedule.initial_asset(),expected)
 
     def test_allowed_assets_all_boundaries(self):
         for stamp, expected in [
@@ -149,11 +155,11 @@ class NativeRotationTests(unittest.TestCase):
         p = self.p
         original = (p._schedule.text_step, p._schedule.next_due, p._care_bubble.text())
         result = []
-        for _ in range(12):
+        for _ in range(21):
             self.double_click()
             result.append(p._sprite_kind())
-        for offset in range(0,12,4):
-            self.assertEqual(set(result[offset:offset+4]), set(p._schedule.allowed_assets()))
+        for offset in range(0,21,7):
+            self.assertEqual(set(result[offset:offset+7]), set(p._pixmaps))
         self.assertTrue(all(a!=b for a,b in zip(result,result[1:])))
         self.assertEqual((p._schedule.text_step, p._schedule.next_due, p._care_bubble.text()), original)
 
@@ -190,19 +196,11 @@ class NativeRotationTests(unittest.TestCase):
             QTest.mouseRelease(widget, Qt.LeftButton, pos=QPoint(20,20))
         self.assertEqual((p._sprite_kind(), p._schedule.text_step, p._schedule.next_due), before)
 
-    def test_legal_boundary_keeps_art_illegal_boundary_corrects_once(self):
-        p = self.p;p._manual_sprite = 'office'
-        self.current = datetime(2026,10,19,18)
-        p._refresh_schedule();self.assertEqual(p._sprite_kind(),'office')
-        self.current = datetime(2026,10,19,23)
-        with self.assertLogs(level='INFO') as logs:
-            p._refresh_schedule()
-        self.assertEqual(p._sprite_kind(),'sleep')
-        self.assertTrue(any('time-rule-correction' in line for line in logs.output))
-        for _ in range(3):p._refresh_schedule()
-        self.assertEqual(p._sprite_kind(),'sleep')
-        self.current = datetime(2026,10,20,6)
-        p._refresh_schedule();self.assertIn(p._sprite_kind(),p._schedule.allowed_assets())
+    def test_time_boundary_does_not_override_user_image(self):
+        p=self.p;p._manual_sprite='late_scene'
+        for current in (datetime(2026,10,19,18),datetime(2026,10,19,23),datetime(2026,10,20,6)):
+            self.current=current;p._refresh_schedule()
+            self.assertEqual(p._sprite_kind(),'late_scene')
 
     def test_timeout_and_important_reminder_never_replace_base_art(self):
         p = self.p;p._manual_sprite='office'
@@ -241,7 +239,7 @@ class NativeRotationTests(unittest.TestCase):
         QTest.qWait(APP.doubleClickInterval()+150)
         self.assertFalse(p._care_bubble.isVisible())
         self.assertEqual((p._schedule.text_step,p._schedule.next_due),before)
-        self.assertEqual(p._sprite_kind(),'sleep')
+        self.assertIn(p._sprite_kind(),p._pixmaps)
 
     def test_pending_greeting_does_not_resurface_on_close(self):
         p=self.p;p._care_bubble.hide();p._queue_message('重要任务：18:00完成。')
@@ -266,17 +264,23 @@ class NativeRotationTests(unittest.TestCase):
         self.assertEqual(p._schedule.text_step,2)
         self.assertEqual(p._schedule.next_due,1300)
 
-    def test_night_round_uses_six_assets_and_double_click_rechecks_time(self):
-        p=self.p;self.current=datetime(2026,10,19,19)
-        p._refresh_schedule();seen=[]
-        for _ in range(12):
-            self.double_click();seen.append(p._sprite_kind())
-        for offset in (0,6):
-            self.assertEqual(set(seen[offset:offset+6]),set(p._schedule.allowed_assets()))
-        self.current=datetime(2026,10,19,23)
-        with self.assertLogs(level='INFO') as logs:self.double_click()
-        self.assertEqual(p._sprite_kind(),'sleep')
-        self.assertTrue(any('time-rule-correction' in line for line in logs.output))
+    def test_periodic_at_night_traverses_all_seven(self):
+        p=self.p;self.current=datetime(2026,10,19,23,30)
+        seen=[]
+        for tick in range(400,2500,300):
+            self.mock_clock.return_value=tick;p._refresh_schedule()
+            seen.append(p._sprite_kind());p._care_bubble.hide()
+        self.assertEqual(set(seen),set(p._pixmaps))
+
+    def test_night_and_nap_double_click_use_all_seven(self):
+        p=self.p
+        for current in (datetime(2026,10,19,12,45),datetime(2026,10,19,19),datetime(2026,10,19,23,30)):
+            self.current=current;p._refresh_schedule();seen=[]
+            for _ in range(14):
+                self.double_click();seen.append(p._sprite_kind())
+            for offset in (0,7):
+                self.assertEqual(set(seen[offset:offset+7]),set(p._pixmaps))
+
 
 
 if __name__ == '__main__':

@@ -70,35 +70,25 @@ class DesktopTests(unittest.TestCase):
             self.assertLessEqual(abs(self.pet.x()-self.pet._anchor_x),WALK_RADIUS)
         self.assertEqual(directions,{-1,1});self.assertEqual(self.pet._state,PetState.WALK)
 
-    def test_double_click_cycles_allowed_art_and_resets_at_boundary(self):
-        self.current=datetime(2026,10,19,18,0);self.pet._refresh_schedule()
-        self.pet._care_bubble.hide()
-        seen=set()
-        for _ in range(6):
+    def test_double_click_cycles_all_seven_at_night_and_keeps_choice(self):
+        self.current=datetime(2026,10,19,23,0);self.pet._refresh_schedule()
+        self.pet._care_bubble.hide();seen=set()
+        for _ in range(7):
             QTest.mouseDClick(self.pet,Qt.LeftButton,pos=QPoint(60,60))
             QTest.mouseRelease(self.pet,Qt.LeftButton,pos=QPoint(60,60))
-            seen.add(self.pet._sprite_kind(False))
-            self.assertFalse(self.pet._dragging)
+            seen.add(self.pet._sprite_kind())
             chosen=self.pet._manual_sprite
             self.pet._refresh_schedule()
             self.assertEqual(self.pet._manual_sprite,chosen)
-        self.assertEqual(seen,{'normal','office','desktop','happy','late','late_scene'})
-        self.current=datetime(2026,10,19,23,0);self.pet._refresh_schedule()
-        self.assertEqual(self.pet._manual_sprite,'sleep')
-        self.pet._care_bubble.hide()
-        QTest.mouseDClick(self.pet,Qt.LeftButton,pos=QPoint(60,60))
-        self.assertEqual(self.pet._manual_sprite,'sleep')
+        self.assertEqual(seen,{'normal','office','desktop','happy','late','late_scene','sleep'})
 
-    def test_daytime_double_click_uses_all_day_art_without_text_changes(self):
-        self.pet._messages.clear()
-        self.pet._care_bubble.hide()
-        seen=set()
-        for _ in range(4):
+    def test_daytime_double_click_uses_all_seven_without_text_changes(self):
+        self.pet._messages.clear();self.pet._care_bubble.hide();seen=set()
+        for _ in range(7):
             QTest.mouseDClick(self.pet,Qt.LeftButton,pos=QPoint(60,60))
             seen.add(self.pet._sprite_kind())
             self.assertFalse(self.pet._care_bubble.isVisible())
-            self.pet._care_bubble.hide()
-        self.assertEqual(seen,{'normal','office','desktop','happy'})
+        self.assertEqual(seen,{'normal','office','desktop','happy','late','late_scene','sleep'})
 
     def test_drag_updates_anchor_and_grab_scale(self):
         p=self.pet;initial=p.pos();local=QPoint(60,60);global_pos=p.mapToGlobal(local)
@@ -140,9 +130,9 @@ class DesktopTests(unittest.TestCase):
         with patch('desktop_pet.idle_seconds',return_value=0):
             self.pet._care_clock.interval=30;self.pet._check_care()
         self.assertTrue(self.pet._care_bubble.isVisible())
-        self.assertEqual(self.pet._current_pixmap().cacheKey(),self.pet._pixmaps['sleep'].cacheKey())
+        self.assertEqual(self.pet._current_pixmap().cacheKey(),self.pet._pixmaps[self.pet._manual_sprite].cacheKey())
         self.pet._care_bubble.hide()
-        self.assertEqual(self.pet._current_pixmap().cacheKey(),self.pet._pixmaps['sleep'].cacheKey())
+        self.assertEqual(self.pet._current_pixmap().cacheKey(),self.pet._pixmaps[self.pet._manual_sprite].cacheKey())
 
     def test_sleep_greeting_is_deferred_and_click_is_gentle(self):
         self.current=datetime(2026,10,19,23,0);self.pet._refresh_schedule()
@@ -173,7 +163,7 @@ class DesktopTests(unittest.TestCase):
             self.assertEqual(self.pet._appearance,expected)
             for _ in range(4):
                 self.pet._enter_walk()
-                if expected=='normal':self.assertEqual(self.pet._current_pixmap().cacheKey(),self.pet._pixmaps['normal'].cacheKey())
+                if expected=='normal':self.assertEqual(self.pet._current_pixmap().cacheKey(),self.pet._pixmaps[self.pet._manual_sprite].cacheKey())
         self.current=datetime(2026,10,20,6,0);self.pet._refresh_schedule()
         self.assertEqual(self.pet._appearance,'normal')
 

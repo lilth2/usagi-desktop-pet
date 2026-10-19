@@ -201,12 +201,11 @@ class DesktopPetWindow(QMainWindow):
         if self._closed:
             return
         self._appearance = self._schedule.appearance()
-        corrected = self._correct_time_rules()
         cycle = self._schedule.poll()
         if cycle:
             self._greetings_suppressed = False
             self._messages_blocked = False
-            if cycle == 'periodic' and not corrected:
+            if cycle == 'periodic':
                 self._advance_image('periodic')
             self._greeting_pending = self._schedule.greeting()
         elif self._greeting_pending:
@@ -215,24 +214,9 @@ class DesktopPetWindow(QMainWindow):
         self._check_care()
         self._drain_messages()
 
-    def _correct_time_rules(self):
-        allowed = self._schedule.allowed_assets()
-        if self._sprite_kind() not in allowed:
-            self._manual_sprite = self._schedule.initial_asset()
-            self._image_rotation = ImageRotation()
-            logging.info('Character change reason=time-rule-correction asset=%s time=%s',
-                         self._manual_sprite, self._schedule.now().isoformat())
-            self._update_visual_transition()
-            self.update()
-            return True
-        return False
-
     def _advance_image(self, reason):
         self._appearance = self._schedule.appearance()
-        allowed = self._schedule.allowed_assets()
-        if self._sprite_kind() not in allowed:
-            self._correct_time_rules()
-            return
+        allowed = tuple(asset['id'] for asset in CHARACTER_ASSETS)
         self._manual_sprite = self._image_rotation.next(allowed, self._sprite_kind())
         logging.info('Character change reason=%s asset=%s time=%s',
                      reason, self._manual_sprite, self._schedule.now().isoformat())

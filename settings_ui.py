@@ -35,7 +35,7 @@ class SettingsDialog(QDialog):
         appearance=QWidget(); f=QFormLayout(appearance)
         for key,label in [('nap_start','午睡开始'),('nap_end','午睡结束'),('sleep_start','夜间睡眠开始'),('sleep_end','夜间睡眠结束'),('evening_start','晚间清醒开始')]:
             t=QTimeEdit(QTime.fromString(pet._store.data[key],'HH:mm')); t.setDisplayFormat('HH:mm'); self.times[key]=t; f.addRow(label,t)
-        note=QLabel('优先级：睡觉 > 晚间 > 普通。深夜素材仅在18:00–次日06:00允许出现；素材缺失时回退普通吉伊卡哇。')
+        note=QLabel('启动选图优先级：睡觉 > 晚间 > 普通。启动后双击及五分钟轮播均可展示全部7张，时间变化不强制改图。')
         note.setWordWrap(True); f.addRow(note)
         tabs.addTab(appearance,'外观时间')
         self.variant=QComboBox()

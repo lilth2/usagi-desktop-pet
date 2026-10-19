@@ -51,11 +51,10 @@ class ImageRotation:
         allowed = tuple(allowed)
         if not allowed:
             raise ValueError('没有可用角色素材')
-        if allowed != self.allowed:
+        if allowed != self.allowed or not self.remaining:
             self.allowed = allowed
-            self.remaining = [item for item in allowed if item != current]
-        if not self.remaining:
             self.remaining = list(allowed)
-            if len(allowed) > 1 and self.remaining[0] == current:
-                self.remaining.append(self.remaining.pop(0))
+            if len(allowed)>1 and current in allowed:
+                start=allowed.index(current)+1
+                self.remaining=list(allowed[start:]+allowed[:start])
         return self.remaining.pop(0)
