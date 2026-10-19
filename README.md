@@ -57,11 +57,11 @@ pyinstaller --onefile --windowed --name "UsagiPet" ^
 
 | 常量 | 说明 | 默认值 |
 |------|------|--------|
-| `TEXTURE_DISPLAY_W/H` | 贴图显示尺寸 | 200px |
-| `WINDOW_WIDTH/HEIGHT` | 窗口大小 | 200px |
+| `TEXTURE_DISPLAY_W/H` | 贴图显示尺寸 | 90px（贴图）/ 120px（窗口） |
+| `WINDOW_WIDTH/HEIGHT` | 窗口大小 | 90px（贴图）/ 120px（窗口） |
 | `FRAME_INTERVAL` | 动画帧间隔 | 40ms (25FPS) |
-| `WALK_INTERVAL_MIN/MAX` | 行走触发间隔 | 3-8s |
-| `WALK_SPEED_MIN/MAX` | 行走速度 | 3-5 px/帧 |
+| `WALK_INTERVAL_MIN/MAX` | 行走触发间隔 | 15-30s |
+| `WALK_SPEED_MIN/MAX` | 行走速度 | 1 px/帧 |
 
 
 ## 本地陪聊版
@@ -76,3 +76,14 @@ pyinstaller --onefile --windowed --name "UsagiPet" ^
 
 安装：`python -m pip install -r requirements.txt`，启动：`python desktop_pet.py`。
 Windows 已配置本地虚拟环境时，可双击「启动乌萨奇.bat」。其他电脑请先运行 `python -m venv .venv`，再运行 `.venv\Scripts\python -m pip install -r requirements.txt`。
+
+
+## 自动关怀与轻量走动
+
+- 角色贴图从 200px 缩至 90px；每 15–30 秒走动一次，每次 0.6–1.2 秒。
+- 始终限制在启动位置或最后拖放位置左右各 30px 内，避免连续走动漂移到屏幕中央。
+- Windows 下读取系统「距离最后一次键鼠输入的时间」，每 10 秒检查一次。持续使用约 30 分钟弹出关怀气泡，10 秒后消失，不抢输入焦点。
+- 连续 5 分钟无键鼠输入视为休息并重置计时；休眠或恢复造成的长采样间隔也重置。观看视频等没有键鼠操作的场景可能被视为空闲。
+- 不读取输入内容，不判断真实情绪，不联网，不存储使用记录。非 Windows 平台不启用使用时长提醒。
+- 10 句预设关怀包含休息、喝水、肩颈放松、安慰、鼓励和陪伴，每轮随机且不重复。
+- 右键菜单可以关闭自动关怀、关闭走动，或点「看看关怀提醒」立即预览。开关仅对本次运行生效。

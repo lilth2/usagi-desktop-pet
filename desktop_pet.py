@@ -25,6 +25,7 @@ import random
 import os
 from enum import Enum
 from chat import ChatWindow
+from care import CareClock, CareBubble, idle_seconds
 
 from PyQt5.QtWidgets import QApplication, QMainWindow, QMenu, QAction
 from PyQt5.QtCore import Qt, QTimer, QPoint
@@ -45,19 +46,19 @@ PIXMAP_WALK2 = os.path.join(_BASE, "usagi_walk2.png")
 PIXMAP_GRABBED_GIF = os.path.join(_BASE, "usagi_grabbed.gif")
 
 # 窗口尺寸
-WINDOW_WIDTH = 200
-WINDOW_HEIGHT = 200
+WINDOW_WIDTH = 120
+WINDOW_HEIGHT = 120
 
 # 贴图显示目标尺寸（无论原始图片多大，渲染时缩放到此范围）
-TEXTURE_DISPLAY_W = 200          # Idle/Walk 状态下贴图的显示宽度 px
-TEXTURE_DISPLAY_H = 200          # 显示高度 px
+TEXTURE_DISPLAY_W = 90
+TEXTURE_DISPLAY_H = 90
 
 # 动画帧间隔 (ms)，约 25 FPS
 FRAME_INTERVAL = 40
 
 # Idle 动画参数
 IDLE_FLOAT_PERIOD = 2000       # 浮动周期 ms
-IDLE_FLOAT_AMPLITUDE = 9       # 浮动幅度 px
+IDLE_FLOAT_AMPLITUDE = 4       # 浮动幅度 px
 IDLE_BREATH_RANGE = 0.05       # 呼吸缩放范围 ±5%
 
 # 眨眼参数（贴图模式下仅维持计时，不实际绘制眨眼效果）
@@ -66,12 +67,13 @@ BLINK_INTERVAL_MAX = 4000
 BLINK_DURATION = 80
 
 # Walk 动画参数
-WALK_INTERVAL_MIN = 3000       # 最小行走触发间隔 ms
-WALK_INTERVAL_MAX = 8000       # 最大行走触发间隔 ms
-WALK_DURATION_MIN = 2000       # 最短行走时长 ms
-WALK_DURATION_MAX = 5000       # 最长行走时长 ms
-WALK_SPEED_MIN = 3             # 最小行走速度 px/帧
-WALK_SPEED_MAX = 5             # 最大行走速度 px/帧
+WALK_INTERVAL_MIN = 15000
+WALK_INTERVAL_MAX = 30000
+WALK_DURATION_MIN = 600
+WALK_DURATION_MAX = 1200
+WALK_SPEED_MIN = 1
+WALK_SPEED_MAX = 1
+WALK_RADIUS = 30              # 相对启动/最后拖放位置，最多左右各 30px
 WALK_WOBBLE_PERIOD = 500       # 行走身体摇摆周期 ms
 WALK_WOBBLE_AMPLITUDE = 3      # 行走身体摇摆幅度 px
 WALK_SQUASH_PERIOD = 250       # 行走压扁/拉伸周期 ms
@@ -146,6 +148,33 @@ class DesktopPetWindow(QMainWindow):
         self._setup_window()
         self._setup_state()
         self._setup_timer()
+        self._anchor_x = self.x()
+        self._walking_enabled = True
+        self._care_enabled = True
+        self._care_clock = CareClock()
+        self._care_bubble = CareBubble(self)
+        self._care_timer = QTimer(self)
+        self._care_timer.timeout.connect(self._check_care)
+        self._care_timer.start(10000)
+
+    def _check_care(self):
+        due = self._care_clock.poll(idle_seconds())
+        if due and self._care_enabled and not self._dragging:
+            self._show_care()
+
+    def _show_care(self):
+        self._enter_idle()
+        self._care_bubble.present(self._care_clock.next_message(), self)
+
+    def _toggle_walking(self, enabled):
+        self._walking_enabled = enabled
+        self._enter_idle()
+
+    def _toggle_care(self, enabled):
+        self._care_enabled = enabled
+        self._care_clock = CareClock()
+        if not enabled:
+            self._care_bubble.hide()
 
     def _load_pixmap(self):
         """加载所有贴图资源：Idle (PNG)、Walk (GIF/PNG)、Grabbed (GIF)"""
@@ -231,6 +260,7 @@ class DesktopPetWindow(QMainWindow):
     def mousePressEvent(self, event):
         """鼠标按下：左键进入拖拽/抓起状态，右键弹出菜单"""
         if event.button() == Qt.LeftButton:
+            self._care_bubble.hide()
             self._press_global = event.globalPos()
             self._did_drag = False
             self._dragging = True
@@ -270,6 +300,8 @@ class DesktopPetWindow(QMainWindow):
         if event.button() == Qt.LeftButton and self._dragging:
             self._dragging = False
             self._enter_idle()
+            if self._did_drag:
+                self._anchor_x = self.x()
             if not self._did_drag:
                 self._show_chat()
 
@@ -286,6 +318,15 @@ class DesktopPetWindow(QMainWindow):
         menu = QMenu(self)
         chat_action = menu.addAction("聊聊天")
         chat_action.triggered.connect(self._show_chat)
+        care_action = menu.addAction("自动关怀（持续使用30分钟）")
+        care_action.setCheckable(True)
+        care_action.setChecked(self._care_enabled)
+        care_action.triggered.connect(self._toggle_care)
+        menu.addAction("看看关怀提醒").triggered.connect(self._show_care)
+        walk_action = menu.addAction("小范围走动")
+        walk_action.setCheckable(True)
+        walk_action.setChecked(self._walking_enabled)
+        walk_action.triggered.connect(self._toggle_walking)
         exit_action = QAction("退出程序 (&Q)", self)
         exit_action.triggered.connect(QApplication.quit)
         menu.addAction(exit_action)
@@ -355,7 +396,7 @@ class DesktopPetWindow(QMainWindow):
                 anim.blink_timer_ms = 0
 
         # Walk 触发
-        if self._state_timer_ms >= self._next_walk_ms and not (self._chat and self._chat.isVisible()):
+        if self._walking_enabled and self._state_timer_ms >= self._next_walk_ms and not self._care_bubble.isVisible() and not (self._chat and self._chat.isVisible()):
             self._enter_walk()
 
     def _enter_walk(self):
@@ -395,6 +436,7 @@ class DesktopPetWindow(QMainWindow):
         # 水平移动
         dx = anim.walk_dir * anim.walk_speed
         new_x = self.x() + int(dx)
+        new_x = max(self._anchor_x - WALK_RADIUS, min(new_x, self._anchor_x + WALK_RADIUS))
         new_y = self.y()
 
         # 屏幕边缘检测
