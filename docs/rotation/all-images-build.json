@@ -1,0 +1,8 @@
+{
+  "exe": "D:\\study\\product manager\\usagi-desktop-pet\\dist\\ChiikawaPet.exe",
+  "sha256": "da34ad854d58c687b5897d3fb53e81d41e968659cc43a7e06f4c642bc0877e6f",
+  "size": 44780798,
+  "tests_passed": 59,
+  "time_rule": "startup only",
+  "rotation": "all seven images"
+}
