@@ -24,10 +24,10 @@ import math
 import random
 import os
 from enum import Enum
-from chat import ChatWindow
 from care import CareClock, CareBubble, idle_seconds
+from pet_menu import PetMenu
 
-from PyQt5.QtWidgets import QApplication, QMainWindow, QMenu, QAction
+from PyQt5.QtWidgets import QApplication, QMainWindow, QAction
 from PyQt5.QtCore import Qt, QTimer, QPoint
 from PyQt5.QtGui import QPainter, QColor, QPixmap, QMovie
 
@@ -69,8 +69,8 @@ BLINK_DURATION = 80
 # Walk 动画参数
 WALK_INTERVAL_MIN = 15000
 WALK_INTERVAL_MAX = 30000
-WALK_DURATION_MIN = 600
-WALK_DURATION_MAX = 1200
+WALK_DURATION_MIN = 8000
+WALK_DURATION_MAX = 14000
 WALK_SPEED_MIN = 1
 WALK_SPEED_MAX = 1
 WALK_RADIUS = 30              # 相对启动/最后拖放位置，最多左右各 30px
@@ -143,7 +143,7 @@ class DesktopPetWindow(QMainWindow):
 
     def __init__(self):
         super().__init__()
-        self._chat = None
+        self._menu_open = False
         self._load_pixmap()
         self._setup_window()
         self._setup_state()
@@ -302,35 +302,31 @@ class DesktopPetWindow(QMainWindow):
             self._enter_idle()
             if self._did_drag:
                 self._anchor_x = self.x()
-            if not self._did_drag:
-                self._show_chat()
-
-    def _show_chat(self):
-        if self._chat is None:
-            self._chat = ChatWindow(self)
-        self._chat.show()
-        self._chat.raise_()
-        self._chat.activateWindow()
-        self._chat.input.setFocus()
 
     def _show_context_menu(self, pos):
         """显示右键菜单"""
-        menu = QMenu(self)
-        chat_action = menu.addAction("聊聊天")
-        chat_action.triggered.connect(self._show_chat)
-        care_action = menu.addAction("自动关怀（持续使用30分钟）")
+        self._enter_idle()
+        menu = PetMenu(self, self._pixmap_idle)
+        care_action = menu.addAction("温柔关怀 · 每30分钟")
         care_action.setCheckable(True)
         care_action.setChecked(self._care_enabled)
         care_action.triggered.connect(self._toggle_care)
-        menu.addAction("看看关怀提醒").triggered.connect(self._show_care)
-        walk_action = menu.addAction("小范围走动")
+        menu.addAction("送你一句暖心话 ♡").triggered.connect(self._show_care)
+        menu.addSeparator()
+        walk_action = menu.addAction("小步散步 · 左右30像素")
         walk_action.setCheckable(True)
         walk_action.setChecked(self._walking_enabled)
         walk_action.triggered.connect(self._toggle_walking)
-        exit_action = QAction("退出程序 (&Q)", self)
+        menu.addSeparator()
+        exit_action = QAction("休息啦，下次见～", menu)
         exit_action.triggered.connect(QApplication.quit)
         menu.addAction(exit_action)
-        menu.exec_(pos)
+        self._menu_open = True
+        try:
+            menu.exec_(pos)
+        finally:
+            self._menu_open = False
+            menu.deleteLater()
 
     def _get_screen_geometry(self):
         """获取当前窗口所在屏幕的可用几何区域"""
@@ -396,7 +392,7 @@ class DesktopPetWindow(QMainWindow):
                 anim.blink_timer_ms = 0
 
         # Walk 触发
-        if self._walking_enabled and self._state_timer_ms >= self._next_walk_ms and not self._care_bubble.isVisible() and not (self._chat and self._chat.isVisible()):
+        if self._walking_enabled and self._state_timer_ms >= self._next_walk_ms and not self._care_bubble.isVisible() and not self._menu_open:
             self._enter_walk()
 
     def _enter_walk(self):
@@ -436,22 +432,28 @@ class DesktopPetWindow(QMainWindow):
         # 水平移动
         dx = anim.walk_dir * anim.walk_speed
         new_x = self.x() + int(dx)
-        new_x = max(self._anchor_x - WALK_RADIUS, min(new_x, self._anchor_x + WALK_RADIUS))
         new_y = self.y()
 
-        # 屏幕边缘检测
+        # 在固定活动范围内折返，不在边界原地踏步，也不逐次漂移。
         geom = self._get_screen_geometry()
+        left = self._anchor_x - WALK_RADIUS
+        right = self._anchor_x + WALK_RADIUS
         if geom:
-            if new_x < geom.left():
-                new_x = geom.left()
-                anim.walk_dir = 1
-            elif new_x + WINDOW_WIDTH > geom.right():
-                new_x = geom.right() - WINDOW_WIDTH
-                anim.walk_dir = -1
+            left = max(left, geom.left())
+            right = min(right, geom.right() - WINDOW_WIDTH + 1)
+            if left > right:
+                left = right = max(geom.left(), min(self._anchor_x, geom.right() - WINDOW_WIDTH + 1))
             if new_y < geom.top():
                 new_y = geom.top()
             elif new_y + WINDOW_HEIGHT > geom.bottom():
                 new_y = geom.bottom() - WINDOW_HEIGHT
+
+        if new_x <= left:
+            new_x = left
+            anim.walk_dir = 1
+        elif new_x >= right:
+            new_x = right
+            anim.walk_dir = -1
 
         self.move(new_x, new_y)
 
