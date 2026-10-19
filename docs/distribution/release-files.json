@@ -1,0 +1,17 @@
+[
+  {
+    "file": "ChiikawaPet-Mac-AppleSilicon-1.0.0.zip",
+    "bytes": 37325802,
+    "sha256": "3cb5eee98468536d19880153fce62b8cdb50baddf86f8d6f4b5e95e0d755a307"
+  },
+  {
+    "file": "ChiikawaPet-Mac-Intel-1.0.0.zip",
+    "bytes": 40524973,
+    "sha256": "96fb92985a7f1c2f7197dcdae6f0f4b2ca315c718045c52cb46eb6e5c5483d1b"
+  },
+  {
+    "file": "ChiikawaPet-Windows-1.0.0.zip",
+    "bytes": 46129554,
+    "sha256": "64f8d71f20e4145ed362a40c7a94a1d4a263f07755a1505faaeb434a9f527755"
+  }
+]

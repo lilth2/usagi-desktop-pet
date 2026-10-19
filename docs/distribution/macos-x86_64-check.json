@@ -1,0 +1,22 @@
+{
+  "platform": "macOS-15.7.9-x86_64-i386-64bit",
+  "architecture": "x86_64",
+  "success": true,
+  "images": [
+    "office",
+    "desktop",
+    "happy",
+    "late",
+    "late_scene",
+    "sleep",
+    "normal"
+  ],
+  "independent_clock": true,
+  "close_keeps_art": true,
+  "settings_open": true,
+  "idle_api_available": true,
+  "bubble_size": [
+    168,
+    70
+  ]
+}

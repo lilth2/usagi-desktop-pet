@@ -1,0 +1,33 @@
+[
+  {
+    "os": "macOS",
+    "arch": "arm64",
+    "checks": "passed",
+    "environment": "macOS-15.7.9-arm64-arm-64bit",
+    "dmg_sha256": "e10c3e1929667c2ae371819f655f2a941cb0b821e906248a2e4f5000be6fa34e",
+    "native_macho_arch_verified": true,
+    "bundled_guide_verified": true
+  },
+  {
+    "os": "macOS",
+    "arch": "x86_64",
+    "checks": "passed",
+    "environment": "macOS-15.7.9-x86_64-i386-64bit",
+    "dmg_sha256": "1cdcb5c71d751483005be91099a51fe6b849cd02a8139b1faa8cb8cac3e6ecdc",
+    "native_macho_arch_verified": true,
+    "bundled_guide_verified": true
+  },
+  {
+    "os": "Windows",
+    "arch": "x64",
+    "installer_test": {
+      "InstallExitCode": 0,
+      "InstalledAppCheckPassed": true,
+      "GuideHTMLInstalled": true,
+      "GuideTXTInstalled": true,
+      "UninstallExitCode": 0,
+      "ExecutableRemoved": true,
+      "PersonalConfigurationUnchanged": true
+    }
+  }
+]

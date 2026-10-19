@@ -2,6 +2,12 @@
 
 在现有 PyQt5 桌宠项目上换肤，保留透明置顶、拖拽、小范围散步、离线关怀、菜单开关和退出。新增本地时间问候、时间外观、持久化设置和身体部位动画。没有网络服务、付费 API 或音频。
 
+## 安装包
+
+已提供Windows安装向导、Apple Silicon和Intel各自的macOS DMG；中文HTML/TXT说明随包附带，无需Python。本机最终ZIP位于deliverables目录（不把二进制提交到Git历史）。详见[安装包与实际验证](docs/distribution/交付说明.md)，用户指南源文件在packaging目录。Mac首次打开未公证的个人版可能需要按说明进行系统安全确认。
+
+Mac重建：GitHub Actions → Build macOS installers → Run workflow。Windows重建：build.ps1后使用Inno Setup编译packaging/windows.iss。
+
 ## 启动
 
 Windows 双击 `dist/ChiikawaPet.exe`（本地构建产物），或在已配置的本机双击 `启动吉伊卡哇.bat`。旧的 `启动乌萨奇.bat` 继续兼容，打开同一新版程序。
