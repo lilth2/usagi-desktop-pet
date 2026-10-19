@@ -1,0 +1,15 @@
+{
+  "path": "D:\\study\\product manager\\usagi-desktop-pet\\dist\\ChiikawaPet.exe",
+  "sha256": "204cda84ac432144b7e16baa9feb8c195ac96427f5dfdbf51b5a5985302daf97",
+  "size": 44783360,
+  "tests_passed": 62,
+  "bubble_example": [
+    168,
+    71
+  ],
+  "pet": [
+    120,
+    120
+  ],
+  "build": "success"
+}
