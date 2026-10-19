@@ -82,12 +82,12 @@ class DesktopTests(unittest.TestCase):
             self.assertEqual(self.pet._manual_sprite,chosen)
         self.assertEqual(seen,{'normal','office','desktop','happy','late','late_scene','sleep'})
 
-    def test_daytime_double_click_uses_all_seven_without_text_changes(self):
+    def test_daytime_double_click_uses_all_seven_with_care(self):
         self.pet._messages.clear();self.pet._care_bubble.hide();seen=set()
         for _ in range(7):
             QTest.mouseDClick(self.pet,Qt.LeftButton,pos=QPoint(60,60))
             seen.add(self.pet._sprite_kind())
-            self.assertFalse(self.pet._care_bubble.isVisible())
+            self.assertTrue(self.pet._care_bubble.isVisible())
         self.assertEqual(seen,{'normal','office','desktop','happy','late','late_scene','sleep'})
 
     def test_drag_updates_anchor_and_grab_scale(self):
@@ -118,8 +118,10 @@ class DesktopTests(unittest.TestCase):
         for _ in range(4):QTest.mouseDClick(self.pet,Qt.LeftButton,pos=QPoint(60,60))
         self.assertEqual(self.pet._care_bubble.text(),'重要提醒：任务A在18:00完成。')
         self.assertEqual(len(self.pet._messages),0)
+        self.assertIsNotNone(self.pet._interaction_pending)
         self.pet._care_bubble.hide();self.pet._drain_messages()
-        self.assertFalse(self.pet._care_bubble.isVisible())
+        self.assertTrue(self.pet._care_bubble.isVisible())
+        self.assertIsNone(self.pet._interaction_pending)
 
     def test_sleep_stops_walk_but_delivers_original_reminder(self):
         self.current=datetime(2026,10,19,23,0);self.pet._refresh_schedule()

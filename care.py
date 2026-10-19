@@ -53,20 +53,26 @@ class CareBubble(QWidget):
         self.pet=parent
         self.active=False
         self.suspended=False
+        self.important=False
+        self._tail_side='bottom'
+        self._tail_coordinate=80
+        self._anchor_bounds={}
         self.setAttribute(Qt.WA_ShowWithoutActivating)
         self.setAttribute(Qt.WA_TranslucentBackground)
         self.setFocusPolicy(Qt.NoFocus)
         self.setWindowTitle('吉伊卡哇 · 关怀')
         self.setStyleSheet(BUBBLE_STYLE)
-        layout=QVBoxLayout(self);layout.setContentsMargins(10,4,10,10);layout.setSpacing(0)
-        row=QHBoxLayout();row.addStretch()
-        self.close_button=QPushButton('×');self.close_button.setFixedSize(24,22)
+        layout=QVBoxLayout(self);layout.setContentsMargins(15,13,26,13);layout.setSpacing(0)
+        self.close_button=QPushButton('×',self);self.close_button.setFixedSize(16,16)
+        self.close_button.setStyleSheet('QPushButton {padding:0;color:#92717d;border:none;border-radius:8px;} QPushButton:hover {background:#f6dce5;color:#59464d;}')
         self.close_button.setToolTip('关闭气泡');self.close_button.setFocusPolicy(Qt.NoFocus)
-        self.close_button.clicked.connect(self.dismiss_by_user);row.addWidget(self.close_button);layout.addLayout(row)
+        self.close_button.clicked.connect(self.dismiss_by_user)
         self.label=QLabel();self.label.setWordWrap(True);self.label.setTextFormat(Qt.PlainText)
-        self.label.setStyleSheet('background: transparent; border: none;')
+        self.label.setStyleSheet('background: transparent; border: none; font-size:11px;')
+        self.label.setAlignment(Qt.AlignLeft | Qt.AlignVCenter)
         self.scroll=QScrollArea();self.scroll.setWidgetResizable(True);self.scroll.setWidget(self.label)
         self.scroll.setFocusPolicy(Qt.NoFocus);self.scroll.setFrameShape(QScrollArea.NoFrame)
+        self.scroll.setStyleSheet('QScrollArea {background:transparent;border:none;} QScrollBar:vertical {width:7px;background:#fff5f4;} QScrollBar::handle:vertical {background:#d9b5c4;min-height:14px;border-radius:3px;} QScrollBar::add-line:vertical,QScrollBar::sub-line:vertical {height:0;}')
         self.scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff);layout.addWidget(self.scroll)
         self.timer=QTimer(self);self.timer.setSingleShot(True);self.timer.timeout.connect(self.hide)
         parent.installEventFilter(self)
@@ -83,15 +89,37 @@ class CareBubble(QWidget):
     def mouseDoubleClickEvent(self,event):event.accept()
     def mouseMoveEvent(self,event):event.accept()
 
+    def _bubble_path(self):
+        body=QRectF(self.rect()).adjusted(6.5,6.5,-6.5,-6.5)
+        path=QPainterPath();path.addRoundedRect(body,9,9)
+        tail=QPainterPath();side=self._tail_side
+        if side in ('bottom','top'):
+            anchor=max(body.left()+13,min(self._tail_coordinate,body.right()-13))
+            edge=body.bottom() if side=='bottom' else body.top()
+            tip=self.height()-.7 if side=='bottom' else .7
+            tail.moveTo(anchor-5,edge);tail.lineTo(anchor,tip);tail.lineTo(anchor+5,edge)
+        else:
+            anchor=max(body.top()+12,min(self._tail_coordinate,body.bottom()-12))
+            edge=body.left() if side=='left' else body.right()
+            tip=.7 if side=='left' else self.width()-.7
+            tail.moveTo(edge,anchor-5);tail.lineTo(tip,anchor);tail.lineTo(edge,anchor+5)
+        tail.closeSubpath()
+        return path.united(tail)
+
+    def _update_outline(self):
+        self.close_button.move(self.width()-25,9)
+        self.close_button.raise_()
+        self.setMask(QRegion(self._bubble_path().toFillPolygon().toPolygon()))
+        self.update()
+
     def paintEvent(self,event):
         painter=QPainter(self);painter.setRenderHint(QPainter.Antialiasing)
         painter.setBrush(QColor(CREAM));painter.setPen(QPen(QColor(BORDER),1))
-        painter.drawRoundedRect(QRectF(self.rect()).adjusted(.5,.5,-.5,-.5),10,10)
+        painter.drawPath(self._bubble_path())
 
     def resizeEvent(self,event):
         super().resizeEvent(event)
-        path=QPainterPath();path.addRoundedRect(QRectF(self.rect()),10,10)
-        self.setMask(QRegion(path.toFillPolygon().toPolygon()))
+        self._update_outline()
 
     def hide(self):
         self.active=False;self.suspended=False;self.timer.stop()
@@ -115,9 +143,24 @@ class CareBubble(QWidget):
                 super().hide()
             return
         screen=QApplication.screenAt(self.pet.frameGeometry().center()) or self.pet.screen()
-        area=screen.availableGeometry();rect=self.pet.frameGeometry();gap=8
-        width=min(260,max(80,area.width()-16));self.label.setFixedWidth(max(40,width-40))
-        height=min(max(80,self.label.heightForWidth(width-40)+40),240,max(60,area.height()-16))
+        area=screen.availableGeometry();rect=self.pet.frameGeometry();gap=4
+        # Static alpha bounds keep the tail near the visible character, without
+        # following the small per-frame breathing/sway deformation.
+        pixmap=self.pet._current_pixmap();key=pixmap.cacheKey()
+        if key not in self._anchor_bounds:
+            mask=pixmap.mask()
+            self._anchor_bounds[key]=QRegion(mask).boundingRect() if not mask.isNull() else pixmap.rect()
+        visible=self._anchor_bounds[key]
+        scale=(self.pet.width()-10)/pixmap.width()
+        rect=QRect(self.pet.x()+5+round(visible.x()*scale),
+                   self.pet.y()+5+round(visible.y()*scale),
+                   max(1,round(visible.width()*scale)),max(1,round(visible.height()*scale)))
+        maximum=min(round(self.pet.width()*1.4),180,max(80,area.width()-16))
+        natural=self.label.fontMetrics().horizontalAdvance(self.label.text())+50
+        width=max(min(108,maximum),min(maximum,natural))
+        text_width=max(35,width-49)
+        self.label.setFixedWidth(text_width)
+        height=min(max(46,self.label.heightForWidth(text_width)+28),136,max(46,area.height()-16))
         self.resize(width,height)
         candidates=[QRect(rect.center().x()-width//2,rect.top()-height-gap,width,height),
                     QRect(rect.right()+gap,rect.center().y()-height//2,width,height),
@@ -132,11 +175,20 @@ class CareBubble(QWidget):
                 r.moveTop(max(area.top(),min(r.top(),area.bottom()-height+1)))
                 overlap=r.intersected(rect);fitted.append((overlap.width()*overlap.height(),r))
             target=min(fitted,key=lambda item:item[0])[1]
-        self.move(target.topLeft())
+        if target.bottom() < rect.top():
+            self._tail_side='bottom';self._tail_coordinate=rect.center().x()-target.x()
+        elif target.top() > rect.bottom():
+            self._tail_side='top';self._tail_coordinate=rect.center().x()-target.x()
+        elif target.left() > rect.right():
+            self._tail_side='left';self._tail_coordinate=rect.center().y()-target.y()
+        else:
+            self._tail_side='right';self._tail_coordinate=rect.center().y()-target.y()
+        self.move(target.topLeft());self._update_outline()
         if self.suspended:
             self.suspended=False;self.show();self.timer.start(self.remaining)
 
-    def present(self,text,pet):
+    def present(self,text,pet,important=False):
+        self.important=important
         self.label.setText(text);self.scroll.verticalScrollBar().setValue(0)
         self.active=True;self.suspended=False
         self.follow();self.show();self.timer.start(8000)

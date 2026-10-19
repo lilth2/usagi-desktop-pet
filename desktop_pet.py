@@ -142,6 +142,7 @@ class DesktopPetWindow(QMainWindow):
         self._animation_started = time.monotonic()
         self._messages = deque()
         self._greeting_pending = None
+        self._interaction_pending = None
         self._interacted = False
         self._greetings_suppressed = False
         self._messages_blocked = False
@@ -241,6 +242,7 @@ class DesktopPetWindow(QMainWindow):
         pass
 
     def _dismiss_greeting(self):
+        self._interaction_pending = None
         self._greeting_pending = None
         self._greetings_suppressed = True
         self._messages_blocked = True
@@ -252,6 +254,10 @@ class DesktopPetWindow(QMainWindow):
             return
         if self._messages and not self._messages_blocked:
             text, important = self._messages.popleft()
+            self._care_bubble.present(text, self, important=important)
+        elif self._interaction_pending and not self._messages_blocked:
+            text = self._interaction_pending
+            self._interaction_pending = None
             self._care_bubble.present(text, self)
         elif not self._messages and self._greeting_pending and not self._greetings_suppressed and (self._appearance != 'sleep' or self._interacted):
             candidate = self._schedule.greeting()
@@ -269,9 +275,15 @@ class DesktopPetWindow(QMainWindow):
             self._queue_message('已持续使用电脑30分钟。看看远处，起来走动一下吧。')
 
     def _show_care(self):
-        candidate = self._schedule.greeting()
-        if candidate:
-            self._queue_message(candidate[1], change_pose=False)
+        # Explicit interaction works even while automatic greetings are muted.
+        text = self._schedule.interaction_greeting()
+        self._interaction_pending = text
+        self._messages_blocked = False
+        if self._care_bubble.active and not self._care_bubble.important:
+            self._interaction_pending = None
+            self._care_bubble.present(text, self)
+        else:
+            self._drain_messages()
 
     def _toggle_walking(self, enabled):
         self._walking_enabled = enabled
@@ -340,6 +352,7 @@ class DesktopPetWindow(QMainWindow):
         self._click_token += 1
         self._advance_image('double-click')
         self._start_gesture('happy')
+        self._show_care()
         event.accept()
 
     def _setup_window(self):

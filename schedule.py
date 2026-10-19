@@ -145,6 +145,7 @@ class Schedule:
         self.text_step=0
         self.auxiliary_index=0
         self.last_auxiliary=None
+        self.interaction_steps={}
 
     def now(self):
         return self.preview if self.preview is not None else datetime.now().astimezone()
@@ -179,7 +180,7 @@ class Schedule:
         self.next_due=clock+self.store.data['greeting_interval']*60
         return 'startup' if startup else 'periodic'
 
-    def greeting(self,now=None):
+    def greeting(self,now=None,force=False):
         d=self.store.data; now=now or self.now()
         m=now.hour*60+now.minute
         g=next(g for g in d['greetings'] if contains(m,g['start'],g['end']))
@@ -190,8 +191,8 @@ class Schedule:
         if key!=self.period_key:
             self.period_key=key;self.text_step=0;self.auxiliary_index=0
             self.last_auxiliary=None;self.candidate=None
-        if not d['greetings_enabled']: return None
-        if d['dnd_enabled'] and contains(m,d['dnd_start'],d['dnd_end']): return None
+        if not force and not d['greetings_enabled']: return None
+        if not force and d['dnd_enabled'] and contains(m,d['dnd_start'],d['dnd_end']): return None
         auxiliary=list(dict.fromkeys(text for text in g['messages'] if text!=g['primary']))
         if TEXT_ROTATION[self.text_step % len(TEXT_ROTATION)]=='primary' or not auxiliary:
             text=g['primary']
@@ -203,6 +204,15 @@ class Schedule:
             text=auxiliary[index]
         self.candidate=(key,text)
         return self.candidate
+
+    def interaction_greeting(self):
+        key,_=self.greeting(force=True)
+        g=next(g for g in self.store.data['greetings'] if g['id']==key.rsplit(':',1)[-1])
+        step=self.interaction_steps.get(key,0)
+        auxiliary=list(dict.fromkeys(text for text in g['messages'] if text!=g['primary']))
+        text=g['primary'] if step%2==0 or not auxiliary else auxiliary[(step//2)%len(auxiliary)]
+        self.interaction_steps={key:step+1}
+        return text
 
     def delivered(self,key):
         if not self.candidate or key!=self.candidate[0]: return

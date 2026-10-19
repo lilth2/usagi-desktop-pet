@@ -153,7 +153,7 @@ class NativeRotationTests(unittest.TestCase):
 
     def test_double_click_traverses_rounds_without_advancing_text_or_clock(self):
         p = self.p
-        original = (p._schedule.text_step, p._schedule.next_due, p._care_bubble.text())
+        original = (p._schedule.text_step, p._schedule.next_due)
         result = []
         for _ in range(21):
             self.double_click()
@@ -161,7 +161,8 @@ class NativeRotationTests(unittest.TestCase):
         for offset in range(0,21,7):
             self.assertEqual(set(result[offset:offset+7]), set(p._pixmaps))
         self.assertTrue(all(a!=b for a,b in zip(result,result[1:])))
-        self.assertEqual((p._schedule.text_step, p._schedule.next_due, p._care_bubble.text()), original)
+        self.assertEqual((p._schedule.text_step, p._schedule.next_due), original)
+        self.assertTrue(p._care_bubble.isVisible())
 
     def test_user_close_preserves_art_animation_text_index_and_deadline(self):
         p = self.p
@@ -228,7 +229,7 @@ class NativeRotationTests(unittest.TestCase):
         self.assertEqual(p._sprite_kind(),'office')
         self.assertEqual(p._schedule.next_due,before)
 
-    def test_real_click_then_double_click_does_not_deliver_sleep_greeting(self):
+    def test_real_click_then_double_click_shows_manual_care_without_auto_progress(self):
         p=self.p;p._care_bubble.hide()
         self.current=datetime(2026,10,19,23)
         self.mock_clock.return_value=400;p._refresh_schedule()
@@ -237,9 +238,45 @@ class NativeRotationTests(unittest.TestCase):
         QTest.mouseClick(p,Qt.LeftButton,pos=QPoint(60,60))
         self.double_click()
         QTest.qWait(APP.doubleClickInterval()+150)
-        self.assertFalse(p._care_bubble.isVisible())
+        self.assertTrue(p._care_bubble.isVisible())
+        self.assertEqual(p._care_bubble.text(),CORE_MESSAGES['evening'])
         self.assertEqual((p._schedule.text_step,p._schedule.next_due),before)
         self.assertIn(p._sprite_kind(),p._pixmaps)
+
+    def test_compact_bubble_tracks_visible_character_and_has_clickable_close(self):
+        p=self.p;p.move(500,400);p._show_care();APP.processEvents();b=p._care_bubble
+        self.assertLessEqual(b.width(),round(p.width()*1.4))
+        self.assertLessEqual(b.height(),90)
+        self.assertLessEqual(b.close_button.width(),16)
+        self.assertEqual(b._tail_side,'bottom')
+        bounds=b._anchor_bounds[p._current_pixmap().cacheKey()]
+        visual_top=p.y()+5+round(bounds.y()*(p.width()-10)/p._current_pixmap().width())
+        self.assertLess(abs(b.geometry().bottom()-visual_top),8)
+        self.assertFalse(b.mask().contains(QPoint(0,0)))
+        b.present('很长的内容。'*200,p);APP.processEvents()
+        self.assertLessEqual(b.height(),136)
+        self.assertGreater(b.scroll.verticalScrollBar().maximum(),0)
+
+    def test_double_click_manual_care_works_when_auto_muted(self):
+        p=self.p;p._care_bubble.hide()
+        p._store.data['greetings_enabled']=False
+        p._store.data['dnd_enabled']=True
+        before=(p._schedule.text_step,p._schedule.next_due)
+        self.double_click();first=p._care_bubble.text()
+        self.assertTrue(p._care_bubble.isVisible())
+        self.double_click();second=p._care_bubble.text()
+        self.assertNotEqual(first,second)
+        self.assertEqual((p._schedule.text_step,p._schedule.next_due),before)
+        manual_steps=dict(p._schedule.interaction_steps)
+        QTest.mouseClick(p._care_bubble.close_button,Qt.LeftButton)
+        self.assertEqual(p._schedule.interaction_steps,manual_steps)
+
+    def test_rapid_double_click_updates_one_bubble_without_queue(self):
+        p=self.p
+        for _ in range(10):self.double_click()
+        self.assertTrue(p._care_bubble.isVisible())
+        self.assertEqual(len(p._messages),0)
+        self.assertIsNone(p._interaction_pending)
 
     def test_pending_greeting_does_not_resurface_on_close(self):
         p=self.p;p._care_bubble.hide();p._queue_message('重要任务：18:00完成。')
