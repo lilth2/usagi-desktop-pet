@@ -12,3 +12,6 @@ This is the existing PyQt5 desktop pet, reskinned to Chiikawa. Do not replace it
 - tests/: scheduling and native Qt integration tests with isolated configuration files.
 
 Run tests with python -m unittest discover -s tests -v. Build with build.ps1. See docs/chiikawa/验收报告.md for feature inventory, asset mappings and verification limitations. Files under docs/superpowers/ are the original historical plans, not the current architecture.
+
+- body_animation.py plays pre-baked true-alpha atlases with a two-atlas LRU cache. Keep body playback independent of whole-pet transforms.
+- tools/author_body_animation.py and animation_sources/*/rig.json are editable continuous-mesh authoring sources; see docs/body-animation/交付报告.md.

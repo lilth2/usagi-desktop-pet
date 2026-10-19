@@ -1,0 +1,120 @@
+{
+  "source": "3.png; original middle Chiikawa; two visible feet only",
+  "face": [
+    160,
+    161,
+    48,
+    29
+  ],
+  "regions": [
+    {
+      "name": "ear-left",
+      "center": [
+        112,
+        90
+      ],
+      "radius": [
+        9,
+        12
+      ],
+      "idle": 0.6,
+      "interact": 1.8,
+      "happy": 1.4
+    },
+    {
+      "name": "ear-right",
+      "center": [
+        201,
+        94
+      ],
+      "radius": [
+        9,
+        12
+      ],
+      "idle": 0.6,
+      "interact": 1.8,
+      "happy": 1.4
+    },
+    {
+      "name": "arm-left",
+      "center": [
+        108,
+        221
+      ],
+      "radius": [
+        12,
+        13
+      ],
+      "idle": 0.05,
+      "interact": 1.2,
+      "happy": 2,
+      "pivot": [
+        116,
+        214
+      ]
+    },
+    {
+      "name": "arm-right",
+      "center": [
+        210,
+        222
+      ],
+      "radius": [
+        12,
+        13
+      ],
+      "idle": 0.05,
+      "interact": 2.2,
+      "happy": 2,
+      "pivot": [
+        202,
+        214
+      ]
+    },
+    {
+      "name": "torso",
+      "center": [
+        160,
+        233
+      ],
+      "radius": [
+        38,
+        22
+      ],
+      "idle": 0.8,
+      "interact": 1.0,
+      "happy": 1.5,
+      "walk": 0.6
+    },
+    {
+      "name": "foot-left",
+      "center": [
+        131,
+        266
+      ],
+      "radius": [
+        9,
+        10
+      ],
+      "idle": 0,
+      "interact": 0,
+      "happy": 0,
+      "walk": 2.5
+    },
+    {
+      "name": "foot-right",
+      "center": [
+        169,
+        273
+      ],
+      "radius": [
+        9,
+        9
+      ],
+      "idle": 0,
+      "interact": 0,
+      "happy": 0,
+      "walk": 2.5
+    }
+  ]
+}

@@ -37,6 +37,12 @@ def cutout(image, crop, closing):
 
 
 def main():
+    if (ROOT/'assets/chiikawa/body_sources/6-cutout.png').exists():
+        # New transparent-body sources supersede the earlier scene-card build.
+        # Do not silently regenerate opaque cards over the animated assets.
+        import subprocess,sys
+        subprocess.run([sys.executable,str(ROOT/'tools/author_body_animation.py')],check=True)
+        return
     OUT.mkdir(parents=True, exist_ok=True); DOC.mkdir(parents=True, exist_ok=True)
     inventory = []
     for p in sorted(SRC.glob('*.png')):

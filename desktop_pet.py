@@ -14,6 +14,7 @@ from care import CareClock, CareBubble, idle_seconds
 from pet_menu import PetMenu
 from theme import NAME, resource, ASSETS
 from schedule import SettingsStore, Schedule
+from body_animation import BodyAnimations
 
 from PyQt5.QtWidgets import QApplication, QMainWindow, QAction
 from PyQt5.QtCore import Qt, QTimer, QPoint
@@ -124,6 +125,7 @@ class DesktopPetWindow(QMainWindow):
 
     def __init__(self, store=None):
         super().__init__()
+        self._closed = False
         self._store = store or SettingsStore()
         self._dev = not getattr(sys, 'frozen', False) and os.environ.get('CHIIKAWA_DEV') == '1'
         self._schedule = Schedule(self._store)
@@ -132,6 +134,10 @@ class DesktopPetWindow(QMainWindow):
             self._schedule.preview = datetime.fromisoformat(sys.argv[sys.argv.index('--preview-time')+1])
         self._appearance = self._schedule.appearance()
         self._manual_sprite = None
+        self._body_animations = BodyAnimations()
+        self._gesture_started = 0
+        self._gesture_clip = 'interact'
+        self._animation_started = time.monotonic()
         self._messages = deque()
         self._greeting_pending = None
         self._interacted = False
@@ -167,8 +173,9 @@ class DesktopPetWindow(QMainWindow):
         if self._asset_warnings:
             QTimer.singleShot(1000, lambda: self._queue_message('；'.join(self._asset_warnings)))
 
-    def _apply_settings(self):
-        self._manual_sprite = None
+    def _apply_settings(self,reset_sprite=True):
+        if reset_sprite:
+            self._manual_sprite = None
         self._walking_enabled = self._store.data['walking_enabled']
         if self._care_enabled != self._store.data['care_enabled']:
             self._care_clock = CareClock()
@@ -190,6 +197,8 @@ class DesktopPetWindow(QMainWindow):
         self._settings_dialog.show()
 
     def _refresh_schedule(self):
+        if self._closed:
+            return
         current = self._schedule.appearance()
         if current != self._appearance:
             self._appearance = current
@@ -224,6 +233,8 @@ class DesktopPetWindow(QMainWindow):
         QTimer.singleShot(50, self._drain_messages)
 
     def _drain_messages(self):
+        if self._closed:
+            return
         if self._care_bubble.isVisible() or self._dragging or self._menu_open:
             return
         if self._messages:
@@ -298,6 +309,23 @@ class DesktopPetWindow(QMainWindow):
     def _current_pixmap(self):
         return self._pixmaps.get(self._sprite_kind(), self._pixmap_idle)
 
+    def _start_gesture(self,clip):
+        self._gesture_started = time.monotonic()
+        self._gesture_clip = clip
+
+    def _body_frame(self):
+        if self._store.data['animation_mode'] != 'body':
+            return self._current_pixmap()
+        kind = self._sprite_kind()
+        elapsed = time.monotonic() - self._gesture_started
+        gesture = self._body_animations.metadata(kind, self._gesture_clip)
+        if gesture and elapsed < gesture['duration'] and self._state != PetState.GRABBED:
+            frame = self._body_animations.frame(kind,self._gesture_clip,elapsed)
+        else:
+            clip = 'walk' if self._state == PetState.WALK and self._body_animations.metadata(kind,'walk') else 'idle'
+            frame = self._body_animations.frame(kind,clip,time.monotonic()-self._animation_started)
+        return frame if frame is not None else self._current_pixmap()
+
     def mouseDoubleClickEvent(self, event):
         if event.button() != Qt.LeftButton:
             super().mouseDoubleClickEvent(event)
@@ -314,6 +342,7 @@ class DesktopPetWindow(QMainWindow):
             self._update_visual_transition()
             self.update()
         self._queue_message(self._care_clock.next_message(), change_pose=False)
+        self._start_gesture('happy')
         event.accept()
 
     def _setup_window(self):
@@ -388,6 +417,7 @@ class DesktopPetWindow(QMainWindow):
             if self._did_drag:
                 self._anchor_x = self.x()
             else:
+                self._start_gesture('interact')
                 if self._appearance == 'sleep' and not self._greeting_pending:
                     self._queue_message('轻轻碰到你啦，我在好好休息，也陪着你。')
             self._drain_messages()
@@ -492,7 +522,7 @@ class DesktopPetWindow(QMainWindow):
                 anim.blink_timer_ms = 0
 
         # Walk 触发
-        if self._walking_enabled and self._state_timer_ms >= self._next_walk_ms and not self._care_bubble.isVisible() and not self._menu_open and not (self._settings_dialog and self._settings_dialog.isVisible()):
+        if self._store.data['animation_mode'] != 'reduced' and self._walking_enabled and self._state_timer_ms >= self._next_walk_ms and not self._care_bubble.isVisible() and not self._menu_open and not (self._settings_dialog and self._settings_dialog.isVisible()):
             self._enter_walk()
 
     def _enter_walk(self):
@@ -588,18 +618,35 @@ class DesktopPetWindow(QMainWindow):
             return self._anim.grab_scale
         return self._anim.breath_scale
 
+    def closeEvent(self,event):
+        self._closed = True
+        for timer in (self._timer,self._care_timer,self._schedule_timer):
+            timer.stop()
+        self._care_bubble.hide()
+        if self._settings_dialog is not None:
+            self._settings_dialog.close()
+        super().closeEvent(event)
+
     def paintEvent(self, event):
         painter = QPainter(self)
         painter.setRenderHint(QPainter.Antialiasing)
         painter.setRenderHint(QPainter.SmoothPixmapTransform)
-        pixmap = self._current_pixmap()
+        pixmap = self._body_frame()
         # One canvas/foot baseline for all assets. Uniform transform only;
         # original character proportions are never stretched or squashed.
         painter.translate(WINDOW_WIDTH / 2, 5 + 280 / 320 * TEXTURE_DISPLAY_H)
         scale = self._get_current_scale()
-        if self._state == PetState.WALK:
+        reduced = self._store.data['animation_mode'] == 'reduced'
+        if reduced and self._state != PetState.GRABBED:
+            scale = 1
+        if self._state == PetState.WALK and not reduced:
             painter.rotate(math.sin(self._state_timer_ms * math.pi / 250) * 2)
-        painter.translate(0, self._anim.float_offset_y)
+        painter.translate(0, 0 if reduced else self._anim.float_offset_y)
+        if self._appearance != 'sleep' and not reduced:
+            painter.rotate(math.sin((time.monotonic()-self._animation_started)*math.pi/2)*.7)
+            gesture_time = time.monotonic()-self._gesture_started
+            if 0 <= gesture_time <= 1.6 and self._state != PetState.GRABBED:
+                painter.translate(0, -2.0*math.sin(math.pi*gesture_time/1.6))
         painter.scale(scale, scale)
         from PyQt5.QtCore import QRectF
         target = QRectF(-TEXTURE_DISPLAY_W / 2, -280 / 320 * TEXTURE_DISPLAY_H,

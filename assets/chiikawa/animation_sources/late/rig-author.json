@@ -1,0 +1,67 @@
+{
+  "source": "1.png; lying awake with original phone/pillow/blanket",
+  "face": [
+    182,
+    183,
+    45,
+    42
+  ],
+  "fixed_props": [
+    [
+      135,
+      191,
+      179,
+      235
+    ],
+    [
+      70,
+      257,
+      209,
+      281
+    ]
+  ],
+  "regions": [
+    {
+      "name": "ear-left",
+      "center": [
+        162,
+        123
+      ],
+      "radius": [
+        9,
+        12
+      ],
+      "idle": 0.3,
+      "interact": 1.2,
+      "happy": 1
+    },
+    {
+      "name": "ear-right",
+      "center": [
+        246,
+        172
+      ],
+      "radius": [
+        9,
+        12
+      ],
+      "idle": 0.3,
+      "interact": 1.2,
+      "happy": 1
+    },
+    {
+      "name": "torso",
+      "center": [
+        240,
+        230
+      ],
+      "radius": [
+        24,
+        22
+      ],
+      "idle": 0.6,
+      "interact": 0.8,
+      "happy": 1
+    }
+  ]
+}

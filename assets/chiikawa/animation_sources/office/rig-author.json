@@ -1,0 +1,87 @@
+{
+  "source": "2.png; original visible character, monitor and keyboard",
+  "face": [
+    192,
+    169,
+    46,
+    26
+  ],
+  "fixed_props": [
+    [
+      0,
+      154,
+      134,
+      320
+    ],
+    [
+      137,
+      246,
+      220,
+      284
+    ]
+  ],
+  "regions": [
+    {
+      "name": "ear-left",
+      "center": [
+        167,
+        99
+      ],
+      "radius": [
+        9,
+        12
+      ],
+      "idle": 0.6,
+      "interact": 1.5,
+      "happy": 1.5
+    },
+    {
+      "name": "ear-right",
+      "center": [
+        247,
+        110
+      ],
+      "radius": [
+        9,
+        12
+      ],
+      "idle": 0.6,
+      "interact": 1.5,
+      "happy": 1.5
+    },
+    {
+      "name": "torso",
+      "center": [
+        275,
+        224
+      ],
+      "radius": [
+        18,
+        20
+      ],
+      "idle": 0.8,
+      "interact": 1.0,
+      "happy": 1.2
+    },
+    {
+      "name": "arm-right",
+      "center": [
+        234,
+        242
+      ],
+      "radius": [
+        10,
+        8
+      ],
+      "idle": 0.05,
+      "interact": 0.8,
+      "happy": 1.0,
+      "pivot": [
+        247,
+        237
+      ]
+    }
+  ],
+  "supplemented_body": true,
+  "supplement": "Minimal lower-right torso contour closure behind keyboard, isolated repair region retained; no feet or standing body added."
+}

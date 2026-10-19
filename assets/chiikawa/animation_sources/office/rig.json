@@ -1,0 +1,94 @@
+{
+  "source": "2.png; original visible character, monitor and keyboard",
+  "face": [
+    148.3,
+    193.42000000000002,
+    35.88,
+    20.28
+  ],
+  "fixed_props": [
+    [
+      -1.460000000000008,
+      181.72,
+      103.06,
+      311.2
+    ],
+    [
+      105.4,
+      253.48,
+      170.14,
+      283.12
+    ]
+  ],
+  "regions": [
+    {
+      "name": "ear-left",
+      "center": [
+        128.8,
+        138.82
+      ],
+      "radius": [
+        7.0200000000000005,
+        9.36
+      ],
+      "idle": 0.46799999999999997,
+      "interact": 1.17,
+      "happy": 1.17
+    },
+    {
+      "name": "ear-right",
+      "center": [
+        191.2,
+        147.4
+      ],
+      "radius": [
+        7.0200000000000005,
+        9.36
+      ],
+      "idle": 0.46799999999999997,
+      "interact": 1.17,
+      "happy": 1.17
+    },
+    {
+      "name": "torso",
+      "center": [
+        213.04,
+        236.32
+      ],
+      "radius": [
+        14.040000000000001,
+        15.600000000000001
+      ],
+      "idle": 0.6240000000000001,
+      "interact": 0.78,
+      "happy": 0.9359999999999999
+    },
+    {
+      "name": "arm-right",
+      "center": [
+        181.06,
+        250.36
+      ],
+      "radius": [
+        7.800000000000001,
+        6.24
+      ],
+      "idle": 0.03900000000000001,
+      "interact": 0.6240000000000001,
+      "happy": 0.78,
+      "pivot": [
+        191.2,
+        246.46
+      ]
+    }
+  ],
+  "supplemented_body": true,
+  "supplement": "Minimal lower-right torso contour closure behind keyboard, isolated repair region retained; no feet or standing body added.",
+  "registration": {
+    "scale": 0.78,
+    "input_head_x": 207,
+    "output_head_x": 160,
+    "baseline": 280,
+    "target_head_width": 140
+  }
+}

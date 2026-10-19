@@ -1,0 +1,40 @@
+{
+  "source": "5.png; confirmed sleeping pose only",
+  "face": [
+    144.4,
+    223.06,
+    32.76,
+    22.62
+  ],
+  "fixed_props": [
+    [
+      52.36,
+      254.26,
+      159.22,
+      283.12
+    ]
+  ],
+  "regions": [
+    {
+      "name": "torso",
+      "center": [
+        188.86,
+        230.86
+      ],
+      "radius": [
+        23.400000000000002,
+        19.5
+      ],
+      "idle": 0.9359999999999999,
+      "interact": 0.9359999999999999,
+      "happy": 0.9359999999999999
+    }
+  ],
+  "registration": {
+    "scale": 0.78,
+    "input_head_x": 178,
+    "output_head_x": 160,
+    "baseline": 280,
+    "target_head_width": 140
+  }
+}

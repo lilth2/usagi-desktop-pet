@@ -1,0 +1,72 @@
+312 INFO: PyInstaller: 6.22.3, contrib hooks: 2026.8
+312 INFO: Python: 3.13.2
+382 INFO: Platform: Windows-11-10.0.26200-SP0
+382 INFO: Python environment: D:\study\product manager\usagi-desktop-pet\.venv
+382 INFO: wrote D:\study\product manager\usagi-desktop-pet\ChiikawaPet.spec
+389 INFO: Removing temporary files and cleaning cache in C:\Users\30630\AppData\Local\pyinstaller
+397 INFO: Module search paths (PYTHONPATH):
+['D:\\study\\product manager\\usagi-desktop-pet',
+ 'C:\\Users\\30630\\AppData\\Local\\Programs\\Python\\Python313\\python313.zip',
+ 'C:\\Users\\30630\\AppData\\Local\\Programs\\Python\\Python313\\DLLs',
+ 'C:\\Users\\30630\\AppData\\Local\\Programs\\Python\\Python313\\Lib',
+ 'C:\\Users\\30630\\AppData\\Local\\Programs\\Python\\Python313',
+ 'D:\\study\\product manager\\usagi-desktop-pet\\.venv',
+ 'D:\\study\\product manager\\usagi-desktop-pet\\.venv\\Lib\\site-packages',
+ 'D:\\study\\product manager\\usagi-desktop-pet']
+1225 INFO: Appending 'datas' from .spec
+1226 INFO: checking Analysis
+1226 INFO: Building Analysis because Analysis-00.toc is non existent
+1226 INFO: Looking for Python shared library...
+1226 INFO: Using Python shared library: C:\Users\30630\AppData\Local\Programs\Python\Python313\python313.dll
+1226 INFO: Running Analysis Analysis-00.toc
+1226 INFO: Target bytecode optimization level: 0
+1226 INFO: Initializing module dependency graph...
+1230 INFO: Initializing module graph hook caches...
+1239 INFO: Analyzing modules for base_library.zip ...
+3340 INFO: Processing standard module hook 'hook-encodings.py' from 'D:\\study\\product manager\\usagi-desktop-pet\\.venv\\Lib\\site-packages\\PyInstaller\\hooks'
+4262 INFO: Processing standard module hook 'hook-math.py' from 'D:\\study\\product manager\\usagi-desktop-pet\\.venv\\Lib\\site-packages\\PyInstaller\\hooks'
+5130 INFO: Processing standard module hook 'hook-pickle.py' from 'D:\\study\\product manager\\usagi-desktop-pet\\.venv\\Lib\\site-packages\\PyInstaller\\hooks'
+5857 INFO: Processing standard module hook 'hook-heapq.py' from 'D:\\study\\product manager\\usagi-desktop-pet\\.venv\\Lib\\site-packages\\PyInstaller\\hooks'
+6264 INFO: Caching module dependency graph...
+6288 INFO: Analyzing D:\study\product manager\usagi-desktop-pet\desktop_pet.py
+6325 INFO: Processing standard module hook 'hook-_ctypes.py' from 'D:\\study\\product manager\\usagi-desktop-pet\\.venv\\Lib\\site-packages\\PyInstaller\\hooks'
+6333 INFO: Processing standard module hook 'hook-PyQt5.py' from 'D:\\study\\product manager\\usagi-desktop-pet\\.venv\\Lib\\site-packages\\PyInstaller\\hooks'
+6892 INFO: Processing standard module hook 'hook-PyQt5.QtCore.py' from 'D:\\study\\product manager\\usagi-desktop-pet\\.venv\\Lib\\site-packages\\PyInstaller\\hooks'
+8576 INFO: Processing standard module hook 'hook-PyQt5.QtWidgets.py' from 'D:\\study\\product manager\\usagi-desktop-pet\\.venv\\Lib\\site-packages\\PyInstaller\\hooks'
+12423 INFO: Processing standard module hook 'hook-PyQt5.QtGui.py' from 'D:\\study\\product manager\\usagi-desktop-pet\\.venv\\Lib\\site-packages\\PyInstaller\\hooks'
+37753 INFO: Processing module hooks (post-graph stage)...
+37756 WARNING: Hidden import "sip" not found!
+37785 INFO: Performing binary vs. data reclassification (126 entries)
+37874 INFO: Looking for ctypes DLLs
+37880 INFO: Analyzing run-time hooks ...
+37882 INFO: Including run-time hook 'pyi_rth_inspect.py' from 'D:\\study\\product manager\\usagi-desktop-pet\\.venv\\Lib\\site-packages\\PyInstaller\\hooks\\rthooks'
+37885 INFO: Including run-time hook 'pyi_rth_pyqt5.py' from 'D:\\study\\product manager\\usagi-desktop-pet\\.venv\\Lib\\site-packages\\PyInstaller\\hooks\\rthooks'
+37887 INFO: Processing pre-find-module-path hook 'hook-_pyi_rth_utils.py' from 'D:\\study\\product manager\\usagi-desktop-pet\\.venv\\Lib\\site-packages\\PyInstaller\\hooks\\pre_find_module_path'
+37890 INFO: Processing standard module hook 'hook-_pyi_rth_utils.py' from 'D:\\study\\product manager\\usagi-desktop-pet\\.venv\\Lib\\site-packages\\PyInstaller\\hooks'
+37893 INFO: Including run-time hook 'pyi_rth_pkgutil.py' from 'D:\\study\\product manager\\usagi-desktop-pet\\.venv\\Lib\\site-packages\\PyInstaller\\hooks\\rthooks'
+37898 INFO: Creating base_library.zip...
+37921 INFO: Looking for dynamic libraries
+38211 INFO: Extra DLL search directories (AddDllDirectory): ['D:\\study\\product manager\\usagi-desktop-pet\\.venv\\Lib\\site-packages\\PyQt5\\Qt5\\bin']
+38211 INFO: Extra DLL search directories (PATH): ['D:\\study\\product manager\\usagi-desktop-pet\\.venv\\Lib\\site-packages\\PyQt5\\Qt5\\bin']
+38959 INFO: Warnings written to D:\study\product manager\usagi-desktop-pet\build\ChiikawaPet\warn-ChiikawaPet.txt
+38970 INFO: Graph cross-reference written to D:\study\product manager\usagi-desktop-pet\build\ChiikawaPet\xref-ChiikawaPet.html
+38985 INFO: checking PYZ
+38985 INFO: Building PYZ because PYZ-00.toc is non existent
+38985 INFO: Building PYZ (ZlibArchive) D:\study\product manager\usagi-desktop-pet\build\ChiikawaPet\PYZ-00.pyz
+39100 INFO: Building PYZ (ZlibArchive) D:\study\product manager\usagi-desktop-pet\build\ChiikawaPet\PYZ-00.pyz completed successfully.
+39108 INFO: checking PKG
+39108 INFO: Building PKG because PKG-00.toc is non existent
+39108 INFO: Building PKG (CArchive) ChiikawaPet.pkg
+47850 INFO: Building PKG (CArchive) ChiikawaPet.pkg completed successfully.
+47853 INFO: Bootloader D:\study\product manager\usagi-desktop-pet\.venv\Lib\site-packages\PyInstaller\bootloader\Windows-64bit-intel\runw.exe
+47853 INFO: checking EXE
+47853 INFO: Building EXE because EXE-00.toc is non existent
+47853 INFO: Building EXE from EXE-00.toc
+47857 INFO: Copying bootloader EXE to D:\study\product manager\usagi-desktop-pet\dist\ChiikawaPet.exe
+47998 INFO: Copying icon to EXE
+48069 INFO: Copying 0 resources to EXE
+48069 INFO: Embedding manifest in EXE
+48141 INFO: Appending PKG archive to EXE
+48452 INFO: Fixing EXE headers
+49121 INFO: Building EXE from EXE-00.toc completed successfully.
+49125 INFO: Build complete! The results are available in: D:\study\product manager\usagi-desktop-pet\dist

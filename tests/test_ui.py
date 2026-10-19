@@ -96,7 +96,7 @@ class DesktopTests(unittest.TestCase):
         self.assertNotEqual(initial,p.pos());self.assertEqual(p._anchor_x,p.x())
         self.assertEqual(p._state,PetState.IDLE)
 
-    def test_seventh_image_preserves_entire_landscape(self):
+    def test_seventh_image_is_now_transparent_character(self):
         image=self.pet._pixmaps['late_scene'].toImage()
         opaque=[]
         for y in range(image.height()):
@@ -104,7 +104,9 @@ class DesktopTests(unittest.TestCase):
                 if image.pixelColor(x,y).alpha():opaque.append((x,y))
         width=max(x for x,y in opaque)-min(x for x,y in opaque)+1
         height=max(y for x,y in opaque)-min(y for x,y in opaque)+1
-        self.assertEqual((width,height),(280,187))
+        self.assertLess(width,220)
+        self.assertGreater(height,width*.8)
+        self.assertEqual(image.pixelColor(min(x for x,y in opaque),min(y for x,y in opaque)).alpha(),0)
 
     def test_switch_care_never_replaces_important_reminder(self):
         self.pet._queue_message('重要提醒：任务A在18:00完成。')

@@ -1,0 +1,91 @@
+{
+  "method": "continuous local mesh; premultiplied-alpha bilinear sampling",
+  "source": "6.png / background-extracted source",
+  "supplemented_body": false,
+  "face": [
+    160,
+    143,
+    48,
+    30
+  ],
+  "regions": [
+    {
+      "name": "ear-left",
+      "center": [
+        117,
+        82
+      ],
+      "radius": [
+        10,
+        14
+      ],
+      "idle": 0.65,
+      "interact": 1.7,
+      "happy": 1.2
+    },
+    {
+      "name": "ear-right",
+      "center": [
+        203,
+        84
+      ],
+      "radius": [
+        10,
+        14
+      ],
+      "idle": 0.65,
+      "interact": 1.7,
+      "happy": 1.2
+    },
+    {
+      "name": "arm-left",
+      "center": [
+        81,
+        199
+      ],
+      "pivot": [
+        101,
+        209
+      ],
+      "radius": [
+        18,
+        14
+      ],
+      "idle": 0.12,
+      "interact": 1.5,
+      "happy": 5
+    },
+    {
+      "name": "arm-right",
+      "center": [
+        242,
+        199
+      ],
+      "pivot": [
+        220,
+        209
+      ],
+      "radius": [
+        18,
+        14
+      ],
+      "idle": 0.12,
+      "interact": 4,
+      "happy": 5
+    },
+    {
+      "name": "torso",
+      "center": [
+        163,
+        230
+      ],
+      "radius": [
+        45,
+        27
+      ],
+      "idle": 1.0,
+      "interact": 1.4,
+      "happy": 2.4
+    }
+  ]
+}

@@ -1,0 +1,99 @@
+{
+  "method": "continuous local mesh; premultiplied-alpha bilinear sampling",
+  "source": "6.png / background-extracted source",
+  "supplemented_body": false,
+  "face": [
+    160.0,
+    173.14,
+    37.44,
+    23.400000000000002
+  ],
+  "regions": [
+    {
+      "name": "ear-left",
+      "center": [
+        126.46000000000001,
+        125.56
+      ],
+      "radius": [
+        7.800000000000001,
+        10.92
+      ],
+      "idle": 0.507,
+      "interact": 1.326,
+      "happy": 0.9359999999999999
+    },
+    {
+      "name": "ear-right",
+      "center": [
+        193.54,
+        127.12
+      ],
+      "radius": [
+        7.800000000000001,
+        10.92
+      ],
+      "idle": 0.507,
+      "interact": 1.326,
+      "happy": 0.9359999999999999
+    },
+    {
+      "name": "arm-left",
+      "center": [
+        98.38,
+        216.82
+      ],
+      "pivot": [
+        113.97999999999999,
+        224.62
+      ],
+      "radius": [
+        14.040000000000001,
+        10.92
+      ],
+      "idle": 0.0936,
+      "interact": 1.17,
+      "happy": 3.9000000000000004
+    },
+    {
+      "name": "arm-right",
+      "center": [
+        223.96,
+        216.82
+      ],
+      "pivot": [
+        206.8,
+        224.62
+      ],
+      "radius": [
+        14.040000000000001,
+        10.92
+      ],
+      "idle": 0.0936,
+      "interact": 3.12,
+      "happy": 3.9000000000000004
+    },
+    {
+      "name": "torso",
+      "center": [
+        162.34,
+        241.0
+      ],
+      "radius": [
+        35.1,
+        21.060000000000002
+      ],
+      "idle": 0.78,
+      "interact": 1.0919999999999999,
+      "happy": 1.8719999999999999
+    }
+  ],
+  "fixed_props": [],
+  "registration": {
+    "scale": 0.78,
+    "input_head_x": 160,
+    "output_head_x": 160,
+    "baseline": 280,
+    "target_head_width": 140
+  }
+}

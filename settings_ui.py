@@ -24,6 +24,11 @@ class SettingsDialog(QDialog):
         general=QWidget(); f=QFormLayout(general)
         for key,label in [('care_enabled','自动关怀（持续使用30分钟）'),('walking_enabled','小步散步（左右各30像素）'),('greetings_enabled','自动时间问候'),('appearance_enabled','按时间切换外观'),('nap_enabled','启用午睡外观')]:
             box=QCheckBox(label); box.setChecked(pet._store.data[key]); self.boxes[key]=box; f.addRow(box)
+        self.animation_mode=QComboBox()
+        for label,value in [('仅整图动画','whole'),('整图＋身体动画','body'),('减少动画','reduced')]:
+            self.animation_mode.addItem(label,value)
+        self.animation_mode.setCurrentIndex(max(0,self.animation_mode.findData(pet._store.data['animation_mode'])))
+        f.addRow('动画效果',self.animation_mode)
         note=QLabel('关怀提醒继续在睡眠外观下运行；问候延至互动或睡醒。\n聊天功能此前已移除；不添加网络服务或语音。')
         note.setWordWrap(True); f.addRow(note)
         tabs.addTab(general,'陪伴')
@@ -85,6 +90,7 @@ class SettingsDialog(QDialog):
     def save(self):
         data=copy.deepcopy(self.pet._store.data)
         data['late_variant']=self.variant.currentData()
+        data['animation_mode']=self.animation_mode.currentData()
         for key,box in self.boxes.items():data[key]=box.isChecked()
         for key,t in self.times.items():data[key]=t.time().toString('HH:mm')
         for row,g in enumerate(data['greetings']):
@@ -95,4 +101,5 @@ class SettingsDialog(QDialog):
             validate(data);self.pet._store.data=data;self.pet._store.save()
         except (ValueError,KeyError,TypeError,OSError) as e:
             self.pet._store.data=old;QMessageBox.warning(self,'设置未保存',str(e));return
-        self.pet._apply_settings();self.accept()
+        appearance_keys=('appearance_enabled','nap_enabled','nap_start','nap_end','sleep_start','sleep_end','evening_start','late_variant')
+        self.pet._apply_settings(reset_sprite=any(old[k]!=data[k] for k in appearance_keys));self.accept()

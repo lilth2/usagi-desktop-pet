@@ -1,0 +1,74 @@
+{
+  "source": "1.png; lying awake with original phone/pillow/blanket",
+  "face": [
+    158.44,
+    204.34,
+    35.1,
+    32.76
+  ],
+  "fixed_props": [
+    [
+      121.78,
+      210.57999999999998,
+      156.1,
+      244.9
+    ],
+    [
+      71.08,
+      262.06,
+      179.5,
+      280.78
+    ]
+  ],
+  "regions": [
+    {
+      "name": "ear-left",
+      "center": [
+        142.84,
+        157.54
+      ],
+      "radius": [
+        7.0200000000000005,
+        9.36
+      ],
+      "idle": 0.23399999999999999,
+      "interact": 0.9359999999999999,
+      "happy": 0.78
+    },
+    {
+      "name": "ear-right",
+      "center": [
+        208.36,
+        195.76
+      ],
+      "radius": [
+        7.0200000000000005,
+        9.36
+      ],
+      "idle": 0.23399999999999999,
+      "interact": 0.9359999999999999,
+      "happy": 0.78
+    },
+    {
+      "name": "torso",
+      "center": [
+        203.68,
+        241.0
+      ],
+      "radius": [
+        18.72,
+        17.16
+      ],
+      "idle": 0.46799999999999997,
+      "interact": 0.6240000000000001,
+      "happy": 0.78
+    }
+  ],
+  "registration": {
+    "scale": 0.78,
+    "input_head_x": 184,
+    "output_head_x": 160,
+    "baseline": 280,
+    "target_head_width": 140
+  }
+}

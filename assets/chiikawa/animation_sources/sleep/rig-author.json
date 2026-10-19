@@ -1,0 +1,33 @@
+{
+  "source": "5.png; confirmed sleeping pose only",
+  "face": [
+    158,
+    207,
+    42,
+    29
+  ],
+  "fixed_props": [
+    [
+      40,
+      247,
+      177,
+      284
+    ]
+  ],
+  "regions": [
+    {
+      "name": "torso",
+      "center": [
+        215,
+        217
+      ],
+      "radius": [
+        30,
+        25
+      ],
+      "idle": 1.2,
+      "interact": 1.2,
+      "happy": 1.2
+    }
+  ]
+}

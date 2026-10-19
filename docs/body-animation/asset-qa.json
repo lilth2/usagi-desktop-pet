@@ -1,0 +1,155 @@
+{
+  "normal": {
+    "source_photo": 3,
+    "mode": "RGBA",
+    "size": [
+      320,
+      320
+    ],
+    "bbox": [
+      86,
+      121,
+      234,
+      280
+    ],
+    "transparent_pixels": 84773,
+    "opaque_pixels": 16014,
+    "clips": [
+      "idle",
+      "interact",
+      "happy",
+      "walk"
+    ],
+    "supplemented_body": false
+  },
+  "office": {
+    "source_photo": 2,
+    "mode": "RGBA",
+    "size": [
+      320,
+      320
+    ],
+    "bbox": [
+      14,
+      128,
+      233,
+      280
+    ],
+    "transparent_pixels": 79941,
+    "opaque_pixels": 20193,
+    "clips": [
+      "idle",
+      "interact",
+      "happy"
+    ],
+    "supplemented_body": true
+  },
+  "desktop": {
+    "source_photo": 4,
+    "mode": "RGBA",
+    "size": [
+      320,
+      320
+    ],
+    "bbox": [
+      83,
+      134,
+      233,
+      280
+    ],
+    "transparent_pixels": 84131,
+    "opaque_pixels": 16724,
+    "clips": [
+      "idle",
+      "interact",
+      "happy"
+    ],
+    "supplemented_body": false
+  },
+  "happy": {
+    "source_photo": 6,
+    "mode": "RGBA",
+    "size": [
+      320,
+      320
+    ],
+    "bbox": [
+      85,
+      113,
+      234,
+      280
+    ],
+    "transparent_pixels": 84367,
+    "opaque_pixels": 16374,
+    "clips": [
+      "idle",
+      "interact",
+      "happy"
+    ],
+    "supplemented_body": false
+  },
+  "late": {
+    "source_photo": 1,
+    "mode": "RGBA",
+    "size": [
+      320,
+      320
+    ],
+    "bbox": [
+      36,
+      131,
+      246,
+      280
+    ],
+    "transparent_pixels": 81694,
+    "opaque_pixels": 18757,
+    "clips": [
+      "idle",
+      "interact",
+      "happy"
+    ],
+    "supplemented_body": false
+  },
+  "late_scene": {
+    "source_photo": 7,
+    "mode": "RGBA",
+    "size": [
+      320,
+      320
+    ],
+    "bbox": [
+      85,
+      126,
+      234,
+      280
+    ],
+    "transparent_pixels": 83136,
+    "opaque_pixels": 17768,
+    "clips": [
+      "idle",
+      "interact",
+      "happy"
+    ],
+    "supplemented_body": true
+  },
+  "sleep": {
+    "source_photo": 5,
+    "mode": "RGBA",
+    "size": [
+      320,
+      320
+    ],
+    "bbox": [
+      51,
+      163,
+      241,
+      280
+    ],
+    "transparent_pixels": 86939,
+    "opaque_pixels": 14016,
+    "clips": [
+      "idle"
+    ],
+    "supplemented_body": false
+  }
+}

@@ -1,0 +1,176 @@
+{
+  "happy": {
+    "idle": {
+      "file": "happy-idle.png",
+      "count": 32,
+      "columns": 8,
+      "size": 320,
+      "duration": 4.0,
+      "loop": true
+    },
+    "interact": {
+      "file": "happy-interact.png",
+      "count": 32,
+      "columns": 8,
+      "size": 320,
+      "duration": 1.6,
+      "loop": false
+    },
+    "happy": {
+      "file": "happy-happy.png",
+      "count": 32,
+      "columns": 8,
+      "size": 320,
+      "duration": 1.6,
+      "loop": false
+    }
+  },
+  "office": {
+    "idle": {
+      "file": "office-idle.png",
+      "count": 32,
+      "columns": 8,
+      "size": 320,
+      "duration": 4.0,
+      "loop": true
+    },
+    "interact": {
+      "file": "office-interact.png",
+      "count": 32,
+      "columns": 8,
+      "size": 320,
+      "duration": 1.6,
+      "loop": false
+    },
+    "happy": {
+      "file": "office-happy.png",
+      "count": 32,
+      "columns": 8,
+      "size": 320,
+      "duration": 1.6,
+      "loop": false
+    }
+  },
+  "desktop": {
+    "idle": {
+      "file": "desktop-idle.png",
+      "count": 32,
+      "columns": 8,
+      "size": 320,
+      "duration": 4.0,
+      "loop": true
+    },
+    "interact": {
+      "file": "desktop-interact.png",
+      "count": 32,
+      "columns": 8,
+      "size": 320,
+      "duration": 1.6,
+      "loop": false
+    },
+    "happy": {
+      "file": "desktop-happy.png",
+      "count": 32,
+      "columns": 8,
+      "size": 320,
+      "duration": 1.6,
+      "loop": false
+    }
+  },
+  "late_scene": {
+    "idle": {
+      "file": "late_scene-idle.png",
+      "count": 32,
+      "columns": 8,
+      "size": 320,
+      "duration": 4.0,
+      "loop": true
+    },
+    "interact": {
+      "file": "late_scene-interact.png",
+      "count": 32,
+      "columns": 8,
+      "size": 320,
+      "duration": 1.6,
+      "loop": false
+    },
+    "happy": {
+      "file": "late_scene-happy.png",
+      "count": 32,
+      "columns": 8,
+      "size": 320,
+      "duration": 1.6,
+      "loop": false
+    }
+  },
+  "normal": {
+    "idle": {
+      "file": "normal-idle.png",
+      "count": 32,
+      "columns": 8,
+      "size": 320,
+      "duration": 4.0,
+      "loop": true
+    },
+    "interact": {
+      "file": "normal-interact.png",
+      "count": 32,
+      "columns": 8,
+      "size": 320,
+      "duration": 1.6,
+      "loop": false
+    },
+    "happy": {
+      "file": "normal-happy.png",
+      "count": 32,
+      "columns": 8,
+      "size": 320,
+      "duration": 1.6,
+      "loop": false
+    },
+    "walk": {
+      "file": "normal-walk.png",
+      "count": 32,
+      "columns": 8,
+      "size": 320,
+      "duration": 1.6,
+      "loop": true
+    }
+  },
+  "late": {
+    "idle": {
+      "file": "late-idle.png",
+      "count": 32,
+      "columns": 8,
+      "size": 320,
+      "duration": 4.0,
+      "loop": true
+    },
+    "interact": {
+      "file": "late-interact.png",
+      "count": 32,
+      "columns": 8,
+      "size": 320,
+      "duration": 1.6,
+      "loop": false
+    },
+    "happy": {
+      "file": "late-happy.png",
+      "count": 32,
+      "columns": 8,
+      "size": 320,
+      "duration": 1.6,
+      "loop": false
+    }
+  },
+  "sleep": {
+    "idle": {
+      "file": "sleep-idle.png",
+      "count": 32,
+      "columns": 8,
+      "size": 320,
+      "duration": 6.0,
+      "loop": true
+    }
+  }
+}

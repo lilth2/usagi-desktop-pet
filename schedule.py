@@ -14,6 +14,7 @@ DEFAULTS = {
  'nap_start':'12:30','nap_end':'14:00', 'sleep_start':'23:00','sleep_end':'06:00',
  'evening_start':'18:00',
  'late_variant':'rotate',
+ 'animation_mode':'body',
  'greetings':[
   {'id':'morning','start':'06:00','end':'11:00','label':'早上好','messages':['早上好。新的一天，慢慢来，我陪着你。']},
   {'id':'noon','start':'11:00','end':'14:00','label':'中午好','messages':['中午好。忙完这一会儿，也记得好好吃饭。']},
@@ -39,6 +40,8 @@ def contains(current,start,end):
 
 
 def validate(data):
+    if data['animation_mode'] not in ('whole','body','reduced'):
+        raise ValueError('动画模式必须为仅整图、整图＋身体或减少动画。')
     for key in ('walking_enabled','care_enabled','greetings_enabled','appearance_enabled','nap_enabled'):
         if not isinstance(data[key],bool): raise ValueError('开关配置必须为布尔值：'+key)
     if not isinstance(data['greeted'],dict): raise ValueError('问候记录格式不正确。')

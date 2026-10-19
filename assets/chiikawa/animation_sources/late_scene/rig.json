@@ -1,0 +1,77 @@
+{
+  "source": "7.png; rear-facing Chiikawa, no landscape or other characters",
+  "supplemented_body": true,
+  "supplement": "bottom contour previously covered by grass; conservative repair region saved separately",
+  "face": [
+    218.5,
+    188.74,
+    14.82,
+    25.740000000000002
+  ],
+  "regions": [
+    {
+      "name": "ear-left",
+      "center": [
+        122.56,
+        140.38
+      ],
+      "radius": [
+        8.58,
+        10.14
+      ],
+      "idle": 0.39,
+      "interact": 0.9359999999999999,
+      "happy": 0.9359999999999999
+    },
+    {
+      "name": "ear-right",
+      "center": [
+        192.76,
+        140.38
+      ],
+      "radius": [
+        8.58,
+        10.14
+      ],
+      "idle": 0.39,
+      "interact": 0.9359999999999999,
+      "happy": 0.9359999999999999
+    },
+    {
+      "name": "torso",
+      "center": [
+        156.1,
+        233.2
+      ],
+      "radius": [
+        42.9,
+        24.96
+      ],
+      "idle": 0.7020000000000001,
+      "interact": 0.8580000000000001,
+      "happy": 0.9359999999999999
+    },
+    {
+      "name": "tail",
+      "center": [
+        137.38,
+        263.62
+      ],
+      "radius": [
+        9.36,
+        9.36
+      ],
+      "idle": 0.15600000000000003,
+      "interact": 0.39,
+      "happy": 0.39
+    }
+  ],
+  "fixed_props": [],
+  "registration": {
+    "scale": 0.78,
+    "input_head_x": 160,
+    "output_head_x": 160,
+    "baseline": 280,
+    "target_head_width": 140
+  }
+}

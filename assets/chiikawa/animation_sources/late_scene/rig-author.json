@@ -1,0 +1,69 @@
+{
+  "source": "7.png; rear-facing Chiikawa, no landscape or other characters",
+  "supplemented_body": true,
+  "supplement": "bottom contour previously covered by grass; conservative repair region saved separately",
+  "face": [
+    235,
+    163,
+    19,
+    33
+  ],
+  "regions": [
+    {
+      "name": "ear-left",
+      "center": [
+        112,
+        101
+      ],
+      "radius": [
+        11,
+        13
+      ],
+      "idle": 0.5,
+      "interact": 1.2,
+      "happy": 1.2
+    },
+    {
+      "name": "ear-right",
+      "center": [
+        202,
+        101
+      ],
+      "radius": [
+        11,
+        13
+      ],
+      "idle": 0.5,
+      "interact": 1.2,
+      "happy": 1.2
+    },
+    {
+      "name": "torso",
+      "center": [
+        155,
+        220
+      ],
+      "radius": [
+        55,
+        32
+      ],
+      "idle": 0.9,
+      "interact": 1.1,
+      "happy": 1.2
+    },
+    {
+      "name": "tail",
+      "center": [
+        131,
+        259
+      ],
+      "radius": [
+        12,
+        12
+      ],
+      "idle": 0.2,
+      "interact": 0.5,
+      "happy": 0.5
+    }
+  ]
+}
