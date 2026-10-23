@@ -161,7 +161,7 @@ class CareBubble(QWidget):
                 super().hide()
             return
         screen=QApplication.screenAt(self.pet.frameGeometry().center()) or self.pet.screen()
-        area=screen.availableGeometry();rect=self.pet.frameGeometry();gap=4
+        area=screen.availableGeometry();rect=self.pet.frameGeometry();gap=10
         # Static alpha bounds keep the tail near the visible character, without
         # following the small per-frame breathing/sway deformation.
         pixmap=self.pet._current_pixmap();key=pixmap.cacheKey()

@@ -658,8 +658,8 @@ class DesktopPetWindow(QMainWindow):
             return
         reduced=self._store.data['animation_mode']=='reduced'
         bounds=QRegion(self._current_pixmap().mask()).boundingRect()
-        x=WINDOW_WIDTH/2+22
-        y=5+bounds.top()*TEXTURE_DISPLAY_H/320+7
+        x=WINDOW_WIDTH/2+40
+        y=5+bounds.top()*TEXTURE_DISPLAY_H/320+24
         if not reduced:
             y-=12*elapsed/1.1
         y=max(9,min(WINDOW_HEIGHT-9,y))
