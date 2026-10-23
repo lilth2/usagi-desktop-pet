@@ -19,7 +19,7 @@ from companion_config import CHARACTER_ASSETS, ImageRotation
 
 from PyQt5.QtWidgets import QApplication, QMainWindow, QAction
 from PyQt5.QtCore import Qt, QTimer, QPoint
-from PyQt5.QtGui import QPainter, QColor, QPixmap, QIcon
+from PyQt5.QtGui import QPainter, QColor, QPixmap, QIcon, QPainterPath, QPen, QRegion
 
 # ============================================================================
 # 常量配置
@@ -139,6 +139,7 @@ class DesktopPetWindow(QMainWindow):
         self._body_animations = BodyAnimations()
         self._gesture_started = 0
         self._gesture_clip = 'interact'
+        self._pat_started = None
         self._animation_started = time.monotonic()
         self._messages = deque()
         self._greeting_pending = None
@@ -277,6 +278,9 @@ class DesktopPetWindow(QMainWindow):
     def _show_care(self):
         # Explicit interaction works even while automatic greetings are muted.
         text = self._schedule.interaction_greeting()
+        self._present_interaction(text)
+
+    def _present_interaction(self, text):
         self._interaction_pending = text
         self._messages_blocked = False
         if self._care_bubble.active and not self._care_bubble.important:
@@ -383,6 +387,7 @@ class DesktopPetWindow(QMainWindow):
     def mousePressEvent(self, event):
         """鼠标按下：左键进入拖拽/抓起状态，右键弹出菜单"""
         if event.button() == Qt.LeftButton:
+            self._click_token += 1
             self._press_global = event.globalPos()
             self._did_drag = False
             self._dragging = True
@@ -427,17 +432,18 @@ class DesktopPetWindow(QMainWindow):
                 self._suppress_double_until = time.monotonic() + QApplication.doubleClickInterval()/1000
                 self._anchor_x = self.x()
             else:
-                self._start_gesture('interact')
                 # Wait for Qt to distinguish a single click from a double click.
                 self._click_token += 1
                 token = self._click_token
                 QTimer.singleShot(QApplication.doubleClickInterval()+10, lambda: self._finish_single_click(token))
 
     def _finish_single_click(self, token):
-        if self._closed or token != self._click_token or self._dragging:
+        if self._closed or token != self._click_token or self._dragging or self._menu_open:
             return
-        self._interacted = True
-        self._drain_messages()
+        self._pat_started = time.monotonic()
+        self._start_gesture('interact')
+        self._present_interaction('收到你的摸摸啦。')
+        self.update()
 
     def _show_context_menu(self, pos):
         """显示右键菜单"""
@@ -644,6 +650,32 @@ class DesktopPetWindow(QMainWindow):
             self._settings_dialog.close()
         super().closeEvent(event)
 
+    def _draw_pat_heart(self, painter):
+        if self._pat_started is None:
+            return
+        elapsed=time.monotonic()-self._pat_started
+        if not 0<=elapsed<1.1:
+            return
+        reduced=self._store.data['animation_mode']=='reduced'
+        bounds=QRegion(self._current_pixmap().mask()).boundingRect()
+        x=WINDOW_WIDTH/2+22
+        y=5+bounds.top()*TEXTURE_DISPLAY_H/320+7
+        if not reduced:
+            y-=12*elapsed/1.1
+        y=max(9,min(WINDOW_HEIGHT-9,y))
+        painter.save()
+        painter.setOpacity(1 if reduced else min(1,elapsed/.10)*min(1,(1.1-elapsed)/.30))
+        painter.translate(x,y)
+        scale=1 if reduced else .75+.25*min(1,elapsed/.15)
+        painter.scale(scale,scale)
+        heart=QPainterPath();heart.moveTo(0,5)
+        heart.cubicTo(-10,-2,-7,-9,0,-4)
+        heart.cubicTo(7,-9,10,-2,0,5)
+        heart.closeSubpath()
+        painter.setBrush(QColor('#f29db7'));painter.setPen(QPen(QColor('#c97997'),.8))
+        painter.drawPath(heart)
+        painter.restore()
+
     def paintEvent(self, event):
         painter = QPainter(self)
         painter.setRenderHint(QPainter.Antialiasing)
@@ -674,6 +706,8 @@ class DesktopPetWindow(QMainWindow):
             painter.drawPixmap(target, self._fade_from, QRectF(self._fade_from.rect()))
             painter.setOpacity(progress)
         painter.drawPixmap(target, pixmap, QRectF(pixmap.rect()))
+        painter.resetTransform()
+        self._draw_pat_heart(painter)
         painter.end()
 
 

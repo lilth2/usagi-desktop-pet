@@ -2,7 +2,7 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 arch="${1:-arm64}"
-version="1.0.0"
+version="1.0.1"
 mkdir -p build/mac-icon.iconset deliverables
 source_image="assets/chiikawa/processed/normal.png"
 for size in 16 32 64 128 256 512; do

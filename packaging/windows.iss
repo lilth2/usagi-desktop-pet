@@ -1,4 +1,4 @@
-#define AppVersion "1.0.0"
+#define AppVersion "1.0.1"
 [Setup]
 AppId={{D23FE866-3582-4542-A01A-61BB0702A413}
 AppName=吉伊卡哇桌宠

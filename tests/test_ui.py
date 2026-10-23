@@ -143,7 +143,7 @@ class DesktopTests(unittest.TestCase):
         QTest.mouseClick(self.pet,Qt.LeftButton,pos=QPoint(60,60))
         QTest.qWait(APP.doubleClickInterval()+150)
         self.assertTrue(self.pet._care_bubble.isVisible())
-        self.assertIn('晚上好',self.pet._care_bubble.text())
+        self.assertEqual(self.pet._care_bubble.text(),'收到你的摸摸啦。')
         self.assertEqual(self.pet._appearance,'sleep')
 
     def test_important_messages_queue_before_greeting(self):
