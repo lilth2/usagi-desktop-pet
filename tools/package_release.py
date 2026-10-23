@@ -10,7 +10,7 @@ from pathlib import Path
 
 ROOT=Path(__file__).resolve().parents[1]
 version=sys.argv[1] if len(sys.argv)>1 else '1.01'
-ci=ROOT/'deliverables'/f'{version}-ci'
+ci=ROOT/'deliverables'/(sys.argv[2] if len(sys.argv)>2 else f'{version}-ci')
 release=ROOT/'deliverables'/f'ChiikawaPet-{version}'
 release.mkdir(exist_ok=True)
 metadata=[]

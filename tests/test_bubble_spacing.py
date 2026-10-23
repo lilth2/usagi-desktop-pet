@@ -59,6 +59,16 @@ class BubbleSpacingTests(unittest.TestCase):
             p._care_bubble.present('收到你的摸摸啦。',p)
             self.assert_no_overlap()
 
+    def test_closing_right_bubble_keeps_heart_on_the_same_side(self):
+        p=self.p;p.move(p.screen().availableGeometry().topLeft())
+        p._store.data['animation_mode']='reduced';p._pat_started=100
+        with patch('desktop_pet.time.monotonic',return_value=100.25):
+            p._care_bubble.present('收到你的摸摸啦。',p)
+            self.assertEqual(p._care_bubble._tail_side,'left')
+            before=p.grab().toImage()
+            p._care_bubble.dismiss_by_user()
+            self.assertEqual(p.grab().toImage(),before)
+
     def test_breathing_does_not_move_bubble_and_distance_stays_small(self):
         p=self.p;positions=[]
         for phase in (.1,.4,.8):
