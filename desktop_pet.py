@@ -659,6 +659,8 @@ class DesktopPetWindow(QMainWindow):
         reduced=self._store.data['animation_mode']=='reduced'
         bounds=QRegion(self._current_pixmap().mask()).boundingRect()
         x=WINDOW_WIDTH/2+40
+        if self._care_bubble.active and self._care_bubble._tail_side=='left':
+            x=WINDOW_WIDTH/2-40
         y=5+bounds.top()*TEXTURE_DISPLAY_H/320+24
         if not reduced:
             y-=12*elapsed/1.1

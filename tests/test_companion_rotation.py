@@ -248,10 +248,10 @@ class NativeRotationTests(unittest.TestCase):
         self.assertLessEqual(b.width(),round(p.width()*1.4))
         self.assertLessEqual(b.height(),90)
         self.assertLessEqual(b.close_button.width(),16)
-        self.assertEqual(b._tail_side,'bottom')
+        self.assertEqual(b._tail_side,'right')
         bounds=b._anchor_bounds[p._current_pixmap().cacheKey()]
-        visual_top=p.y()+5+round(bounds.y()*(p.width()-10)/p._current_pixmap().width())
-        self.assertLessEqual(abs(b.geometry().bottom()-visual_top),12)
+        visual_left=p.x()+5+round(bounds.x()*(p.width()-10)/p._current_pixmap().width())
+        self.assertLessEqual(abs(b.geometry().right()-visual_left),14)
         self.assertFalse(b.mask().contains(QPoint(0,0)))
         b.present('很长的内容。'*200,p);APP.processEvents()
         self.assertLessEqual(b.height(),136)

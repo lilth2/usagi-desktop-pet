@@ -8,7 +8,7 @@ from datetime import datetime
 from pathlib import Path
 
 from PyQt5.QtCore import Qt, QPointF, QTimer
-from PyQt5.QtGui import QMouseEvent
+from PyQt5.QtGui import QMouseEvent,QRegion
 
 
 def run(app):
@@ -51,6 +51,9 @@ def run(app):
             assert pet._care_bubble.text()=='收到你的摸摸啦。'
             assert pet._pat_started is not None
             assert pet.grab().toImage()!=before_pat
+            character=QRegion(pet.grab().mask()).translated(pet.pos())
+            speech=pet._care_bubble.mask().translated(pet._care_bubble.pos())
+            assert character.intersected(speech).isEmpty()
             assert deadline==pet._schedule.next_due and step==pet._schedule.text_step
             pet._show_settings()
             assert pet._settings_dialog.isVisible()
@@ -59,6 +62,7 @@ def run(app):
             if sys.platform in ('win32','darwin'):
                 assert idle is not None and idle>=0,'OS idle-time API unavailable'
             result.update(success=True,images=seen,independent_clock=True,pat_response=True,
+                          bubble_does_not_cover_pet=True,
                           close_keeps_art=True,settings_open=True,idle_api_available=idle is not None,
                           bubble_size=[pet._care_bubble.width(),pet._care_bubble.height()])
         except Exception:

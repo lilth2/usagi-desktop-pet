@@ -161,7 +161,7 @@ class CareBubble(QWidget):
                 super().hide()
             return
         screen=QApplication.screenAt(self.pet.frameGeometry().center()) or self.pet.screen()
-        area=screen.availableGeometry();rect=self.pet.frameGeometry();gap=10
+        area=screen.availableGeometry();rect=self.pet.frameGeometry();gap=4
         # Static alpha bounds keep the tail near the visible character, without
         # following the small per-frame breathing/sway deformation.
         pixmap=self.pet._current_pixmap();key=pixmap.cacheKey()
@@ -173,6 +173,21 @@ class CareBubble(QWidget):
         rect=QRect(self.pet.x()+5+round(visible.x()*scale),
                    self.pet.y()+5+round(visible.y()*scale),
                    max(1,round(visible.width()*scale)),max(1,round(visible.height()*scale)))
+        # Reserve a fixed motion envelope rather than chasing each animation
+        # frame. Include the outgoing image while the character crossfades.
+        outgoing=getattr(self.pet,'_fade_from',None)
+        if outgoing is not None and time.monotonic()-self.pet._fade_started<.3:
+            old_key=outgoing.cacheKey()
+            if old_key not in self._anchor_bounds:
+                mask=outgoing.mask()
+                self._anchor_bounds[old_key]=QRegion(mask).boundingRect() if not mask.isNull() else outgoing.rect()
+            old=self._anchor_bounds[old_key]
+            old_scale=(self.pet.width()-10)/outgoing.width()
+            old_rect=QRect(self.pet.x()+5+round(old.x()*old_scale),
+                           self.pet.y()+5+round(old.y()*old_scale),
+                           max(1,round(old.width()*old_scale)),max(1,round(old.height()*old_scale)))
+            rect=rect.united(old_rect)
+        rect=rect.adjusted(-8,-8,8,8)
         maximum=min(round(self.pet.width()*1.4),180,max(80,area.width()-16))
         natural=self.label.fontMetrics().horizontalAdvance(self.label.text())+50
         width=max(min(108,maximum),min(maximum,natural))
@@ -180,10 +195,17 @@ class CareBubble(QWidget):
         self.label.setFixedWidth(text_width)
         height=min(max(46,self.label.heightForWidth(text_width)+28),136,max(46,area.height()-16))
         self.resize(width,height)
-        candidates=[QRect(rect.center().x()-width//2,rect.top()-height-gap,width,height),
-                    QRect(rect.right()+gap,rect.center().y()-height//2,width,height),
-                    QRect(rect.left()-width-gap,rect.center().y()-height//2,width,height),
+        candidates=[QRect(rect.left()-width-gap,rect.top()-height//4,width,height),
+                    QRect(rect.right()+gap,rect.top()-height//4,width,height),
+                    QRect(rect.center().x()-width//2,rect.top()-height-gap,width,height),
                     QRect(rect.center().x()-width//2,rect.bottom()+gap,width,height)]
+        # Slide side bubbles vertically, and top/bottom bubbles horizontally,
+        # without sliding either into the character's protected area.
+        for index,candidate in enumerate(candidates):
+            if index<2:
+                candidate.moveTop(max(area.top(),min(candidate.top(),area.bottom()-height+1)))
+            else:
+                candidate.moveLeft(max(area.left(),min(candidate.left(),area.right()-width+1)))
         # All coordinates are Qt logical desktop coordinates (also on mixed-DPI monitors).
         target=next((r for r in candidates if area.contains(r)),None)
         if target is None:
