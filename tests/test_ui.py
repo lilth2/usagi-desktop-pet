@@ -184,7 +184,8 @@ class DesktopTests(unittest.TestCase):
         self.store.data['legacy']={'keep':'完整保留'}
         self.pet._show_settings();APP.processEvents();d=self.pet._settings_dialog
         d.table.item(0,3).setText('早上好，自己的文案。')
-        d.boxes['nap_enabled'].setChecked(False);d.save()
+        d.boxes['nap_enabled'].setChecked(False)
+        with patch('desktop_pet.idle_seconds',return_value=0):d.save()
         self.assertEqual(d.result(),d.Accepted)
         data=SettingsStore(self.store.path).data
         self.assertEqual(data['legacy'],{'keep':'完整保留'})

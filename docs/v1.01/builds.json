@@ -1,0 +1,112 @@
+{
+  "version": "1.01",
+  "files": [
+    {
+      "name": "ChiikawaPet-Mac-AppleSilicon-1.01.zip",
+      "bytes": 37324380,
+      "sha256": "6634b5484d598334dfd22053a4b33395e7cd33ba7913ef008e3328f78e953e4d"
+    },
+    {
+      "name": "ChiikawaPet-Mac-Intel-1.01.zip",
+      "bytes": 40524356,
+      "sha256": "81cce1d00167ce68b49289db1f49b6145a14192c6dd521b729cb77b18def3b0b"
+    },
+    {
+      "name": "ChiikawaPet-Windows-1.01.zip",
+      "bytes": 46131271,
+      "sha256": "d1e473886f766f9e7624bca7303df1f114c95f477d88dfc52fa32d603da57e9a"
+    }
+  ],
+  "checks": [
+    {
+      "platform": "Mac-AppleSilicon",
+      "native_architecture_verified": true,
+      "app_version": "1.0.1",
+      "check": {
+        "platform": "macOS-15.7.9-arm64-arm-64bit",
+        "architecture": "arm64",
+        "success": true,
+        "images": [
+          "office",
+          "desktop",
+          "happy",
+          "late",
+          "late_scene",
+          "sleep",
+          "normal"
+        ],
+        "independent_clock": true,
+        "pat_response": true,
+        "close_keeps_art": true,
+        "settings_open": true,
+        "idle_api_available": true,
+        "bubble_size": [
+          136,
+          69
+        ]
+      }
+    },
+    {
+      "platform": "Mac-Intel",
+      "native_architecture_verified": true,
+      "app_version": "1.0.1",
+      "check": {
+        "platform": "macOS-15.7.9-x86_64-i386-64bit",
+        "architecture": "x86_64",
+        "success": true,
+        "images": [
+          "office",
+          "desktop",
+          "happy",
+          "late",
+          "late_scene",
+          "sleep",
+          "normal"
+        ],
+        "independent_clock": true,
+        "pat_response": true,
+        "close_keeps_art": true,
+        "settings_open": true,
+        "idle_api_available": true,
+        "bubble_size": [
+          136,
+          69
+        ]
+      }
+    },
+    {
+      "platform": "Windows",
+      "check": {
+        "platform": "Windows-11-10.0.26200-SP0",
+        "architecture": "AMD64",
+        "success": true,
+        "images": [
+          "office",
+          "desktop",
+          "happy",
+          "late",
+          "late_scene",
+          "sleep",
+          "normal"
+        ],
+        "independent_clock": true,
+        "pat_response": true,
+        "close_keeps_art": true,
+        "settings_open": true,
+        "idle_api_available": true,
+        "bubble_size": [
+          138,
+          71
+        ]
+      },
+      "installer": {
+        "InstallExitCode": 0,
+        "InstalledPatCheck": true,
+        "GuidesInstalled": true,
+        "UninstallExitCode": 0,
+        "ExecutableRemoved": true,
+        "PersonalConfigurationUnchanged": true
+      }
+    }
+  ]
+}
