@@ -7,7 +7,7 @@ from unittest.mock import patch
 from PyQt5.QtWidgets import QApplication
 from PyQt5.QtGui import QRegion
 from PyQt5.QtCore import QPoint
-from desktop_pet import DesktopPetWindow
+from desktop_pet import DesktopPetWindow,PetState
 from schedule import SettingsStore
 
 APP=QApplication.instance() or QApplication([])
@@ -37,10 +37,15 @@ class BubbleSpacingTests(unittest.TestCase):
         p=self.p;p._anim.breath_scale=1.05;p._anim.float_offset_y=-4
         for kind in p._pixmaps:
             p._manual_sprite=kind
-            for phase in (.1,.4,.8,1.2):
-                with self.subTest(kind=kind,phase=phase),patch('desktop_pet.time.monotonic',return_value=100+phase):
-                    p._care_bubble.present('收到你的摸摸啦。',p)
-                    self.assert_no_overlap()
+            for clip in ('interact','happy','walk'):
+                p._gesture_clip=clip
+                p._gesture_started=0 if clip=='walk' else 100
+                p._state=PetState.WALK if clip=='walk' else PetState.IDLE
+                p._state_timer_ms=125
+                for phase in (.1,.4,.8,1.2):
+                    with self.subTest(kind=kind,phase=phase,clip=clip),patch('desktop_pet.time.monotonic',return_value=100+phase):
+                        p._care_bubble.present('收到你的摸摸啦。',p)
+                        self.assert_no_overlap()
 
     def test_corners_long_text_and_pat_heart(self):
         p=self.p;area=p.screen().availableGeometry()

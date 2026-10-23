@@ -18,7 +18,7 @@ metadata=[]
 for arch,cpu,platform_name in [('arm64',0x100000c,'Mac-AppleSilicon'),('x86_64',0x1000007,'Mac-Intel')]:
     source=ci/f'ChiikawaPet-macOS-{arch}'
     report=json.loads((source/f'macos-{arch}-check.json').read_text())
-    assert report['success'] and report['pat_response']
+    assert report['success'] and report['pat_response'] and report['bubble_does_not_cover_pet']
     for line in (source/f'macOS-{arch}-SHA256.txt').read_text().splitlines():
         digest,name=line.split(None,1)
         assert hashlib.sha256((source/Path(name.strip()).name).read_bytes()).hexdigest()==digest
@@ -44,7 +44,7 @@ windows=release/'Windows';windows.mkdir(exist_ok=True)
 for name in ('ChiikawaPet-Windows-Setup.exe',f'windows-{version}-installed-check.json',f'windows-{version}-installer-test.json'):
     shutil.copy2(ROOT/'deliverables'/name,windows/name)
 installed=json.loads((windows/f'windows-{version}-installed-check.json').read_text())
-assert installed['success'] and installed['pat_response']
+assert installed['success'] and installed['pat_response'] and installed['bubble_does_not_cover_pet']
 installer=json.loads((windows/f'windows-{version}-installer-test.json').read_text(encoding='utf-8-sig'))
 assert installer['InstallExitCode']==0 and installer['UninstallExitCode']==0
 assert installer['PersonalConfigurationUnchanged']

@@ -3,18 +3,18 @@
   "files": [
     {
       "name": "ChiikawaPet-Mac-AppleSilicon-1.01.zip",
-      "bytes": 37324380,
-      "sha256": "6634b5484d598334dfd22053a4b33395e7cd33ba7913ef008e3328f78e953e4d"
+      "bytes": 37331294,
+      "sha256": "9abf82b85a40e6d4a513853fa198210a01578f97995cf2b0dcd91471c79c73dd"
     },
     {
       "name": "ChiikawaPet-Mac-Intel-1.01.zip",
-      "bytes": 40524356,
-      "sha256": "81cce1d00167ce68b49289db1f49b6145a14192c6dd521b729cb77b18def3b0b"
+      "bytes": 40528792,
+      "sha256": "d81a375701ec83479de4011094cd4a342a634259ba7d4e07167498075b485895"
     },
     {
       "name": "ChiikawaPet-Windows-1.01.zip",
-      "bytes": 46131271,
-      "sha256": "d1e473886f766f9e7624bca7303df1f114c95f477d88dfc52fa32d603da57e9a"
+      "bytes": 46131217,
+      "sha256": "63673eb655687e2de3b9f3454ec16c44d1773855ee061442fc88c38ef3bb478c"
     }
   ],
   "checks": [
@@ -37,6 +37,7 @@
         ],
         "independent_clock": true,
         "pat_response": true,
+        "bubble_does_not_cover_pet": true,
         "close_keeps_art": true,
         "settings_open": true,
         "idle_api_available": true,
@@ -65,12 +66,13 @@
         ],
         "independent_clock": true,
         "pat_response": true,
+        "bubble_does_not_cover_pet": true,
         "close_keeps_art": true,
         "settings_open": true,
         "idle_api_available": true,
         "bubble_size": [
           136,
-          69
+          70
         ]
       }
     },
@@ -91,6 +93,7 @@
         ],
         "independent_clock": true,
         "pat_response": true,
+        "bubble_does_not_cover_pet": true,
         "close_keeps_art": true,
         "settings_open": true,
         "idle_api_available": true,
@@ -102,6 +105,7 @@
       "installer": {
         "InstallExitCode": 0,
         "InstalledPatCheck": true,
+        "BubbleDoesNotCoverPet": true,
         "GuidesInstalled": true,
         "UninstallExitCode": 0,
         "ExecutableRemoved": true,
